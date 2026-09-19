@@ -1,0 +1,41 @@
+# Shared pre-commit config template for all repositories.
+# Copy it into each repository; Renovate keeps the rev values up to date.
+# Hooks with no matching files are skipped, so unused hooks can stay in place.
+# See README.md for per-repository adjustments, such as adding Biome for JS/TS.
+repos:
+  # General file fixers and syntax checks
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v6.0.0
+    hooks:
+      # Change to [--unsafe] for YAML with custom tags, such as CloudFormation
+      - id: check-yaml
+        args: [--allow-multiple-documents]
+      # Prefer single quotes for Python string literals
+      - id: double-quote-string-fixer
+      - id: end-of-file-fixer
+        exclude: \.svg$
+      - id: trailing-whitespace
+
+  # Lint GitHub Actions workflows
+  - repo: https://github.com/rhysd/actionlint
+    rev: v1.7.12
+    hooks:
+      - id: actionlint
+
+  # Detect secrets such as API keys and tokens
+  - repo: https://github.com/gitleaks/gitleaks
+    rev: v8.30.1
+    hooks:
+      - id: gitleaks
+
+  # Lint Markdown
+  - repo: https://github.com/markdownlint/markdownlint
+    rev: v0.18.1
+    hooks:
+      - id: markdownlint
+
+  # Lint shell scripts
+  - repo: https://github.com/koalaman/shellcheck-precommit
+    rev: v0.11.0
+    hooks:
+      - id: shellcheck
