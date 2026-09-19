@@ -47,3 +47,33 @@ Common adjustments:
   such as CloudFormation templates
 - Add `exclude:` for files that cause false positives, such as generated files
   (e.g. `exclude: ^src/content/` for markdownlint)
+
+### GitHub Actions
+
+[.github/workflows/pre-commit.yml](.github/workflows/pre-commit.yml) is a
+reusable workflow that runs all hooks against all files. Call it from each
+repository with `.github/workflows/pre-commit.yml`:
+
+```yaml
+name: pre-commit
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  pre-commit:
+    uses: iwstkhr/shared-config/.github/workflows/pre-commit.yml@main
+```
+
+This repository is private, so other repositories can call the workflow only
+after enabling **Settings → Actions → General → Access → Accessible from
+repositories owned by the user**.
