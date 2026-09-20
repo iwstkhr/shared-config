@@ -13,6 +13,11 @@ cp ~/git/shared-config/.pre-commit-config.yaml .
 pre-commit install
 ```
 
+`default_install_hook_types` in the config makes `pre-commit install` set up
+both the `pre-commit` and the `commit-msg` hook, so no extra flags are needed.
+Repositories that ran `pre-commit install` before the `commit-msg` hook was
+added need to run it once more.
+
 After copying, Renovate (`:enablePreCommit`) keeps each repository's `rev`
 values up to date.
 
@@ -27,8 +32,35 @@ values up to date.
 | gitleaks | Secret detection |
 | markdownlint | Markdown |
 | shellcheck | Shell scripts |
+| conventional-pre-commit | Commit messages (`commit-msg` stage) |
 
 Hooks with no matching files are skipped, so unused hooks can stay in place.
+
+### Conventional Commits
+
+`conventional-pre-commit` rejects commit messages that do not follow
+[Conventional Commits](https://www.conventionalcommits.org/), such as
+`feat: add login form` or `fix(api): handle empty payload`.
+
+It runs on the `commit-msg` stage, which has two consequences:
+
+1. `pre-commit run --all-files`, including the CI workflow below, does not
+   check commit messages. Enforcement happens locally at commit time, and
+   `git commit --no-verify` bypasses it
+2. To check a message by hand, pass the file explicitly
+
+```bash
+pre-commit run --hook-stage commit-msg --commit-msg-filename .git/COMMIT_EDITMSG
+```
+
+Allowed types default to `build`, `chore`, `ci`, `docs`, `feat`, `fix`,
+`perf`, `refactor`, `revert`, `style`, and `test`, and `fixup!`/`squash!` and
+merge commits pass as-is. Useful `args` per repository:
+
+- `[feat, fix, docs, chore]` narrows the allowed types (`feat` and `fix` are
+  always allowed)
+- `[--force-scope]` requires a scope, `[--scopes, api,client]` restricts it
+- `[--strict]` also rejects `fixup!`/`squash!` and merge commits
 
 ### Per-repository additions and adjustments
 

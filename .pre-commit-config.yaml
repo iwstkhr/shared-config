@@ -2,6 +2,9 @@
 # Copy it into each repository; Renovate keeps the rev values up to date.
 # Hooks with no matching files are skipped, so unused hooks can stay in place.
 # See README.md for per-repository adjustments, such as adding Biome for JS/TS.
+# Install both hook types so the commit-msg hook runs: pre-commit install
+default_install_hook_types: [pre-commit, commit-msg]
+
 repos:
   # General file fixers and syntax checks
   - repo: https://github.com/pre-commit/pre-commit-hooks
@@ -21,6 +24,12 @@ repos:
     rev: v1.7.12
     hooks:
       - id: actionlint
+
+  # Check commit messages against Conventional Commits (commit-msg stage)
+  - repo: https://github.com/compilerla/conventional-pre-commit
+    rev: v4.4.0
+    hooks:
+      - id: conventional-pre-commit
 
   # Detect secrets such as API keys and tokens
   - repo: https://github.com/gitleaks/gitleaks
