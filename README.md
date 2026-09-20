@@ -27,8 +27,8 @@ values up to date.
 | --- | --- |
 | check-yaml | YAML syntax |
 | end-of-file-fixer / trailing-whitespace | All files |
-| double-quote-string-fixer | Python |
 | actionlint | `.github/workflows/*.yml` |
+| ruff-check / ruff-format | Python |
 | gitleaks | Secret detection |
 | markdownlint | Markdown |
 | shellcheck | Shell scripts |
