@@ -29,6 +29,7 @@ values up to date.
 | end-of-file-fixer / trailing-whitespace | All files |
 | actionlint | `.github/workflows/*.yml` |
 | ruff-check / ruff-format | Python |
+| biome-check | JavaScript / TypeScript |
 | gitleaks | Secret detection |
 | markdownlint | Markdown |
 | shellcheck | Shell scripts |
