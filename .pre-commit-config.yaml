@@ -4,6 +4,9 @@
 # See README.md for per-repository adjustments, such as adding Biome for JS/TS.
 # Install both hook types so the commit-msg hook runs: pre-commit install
 default_install_hook_types: [pre-commit, commit-msg]
+# Limit hooks to the pre-commit stage unless a hook declares its own stage,
+# so committing does not run every hook again on the commit-msg stage
+default_stages: [pre-commit]
 
 repos:
   # General file fixers and syntax checks
