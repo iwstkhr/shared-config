@@ -1,7 +1,7 @@
 # Shared pre-commit config template for all repositories.
 # Copy it into each repository; Renovate keeps the rev values up to date.
 # Hooks with no matching files are skipped, so unused hooks can stay in place.
-# See README.md for per-repository adjustments, such as adding Biome for JS/TS.
+# See README.md for per-repository adjustments, such as excluding generated files.
 # Install both hook types so the commit-msg hook runs: pre-commit install
 default_install_hook_types: [pre-commit, commit-msg]
 # Limit hooks to the pre-commit stage unless a hook declares its own stage,

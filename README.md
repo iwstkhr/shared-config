@@ -1,11 +1,11 @@
 # shared-config
 
-Configuration templates shared across repositories.
+Configuration templates shared across personal repositories.
 
 ## pre-commit
 
 [.pre-commit-config.yaml](.pre-commit-config.yaml) is the canonical config
-for all repositories. pre-commit has no config inheritance, so copy it into
+for personal repositories. pre-commit has no config inheritance, so copy it into
 each new repository.
 
 ```bash
@@ -63,18 +63,7 @@ merge commits pass as-is. Useful `args` per repository:
 - `[--force-scope]` requires a scope, `[--scopes, api,client]` restricts it
 - `[--strict]` also rejects `fixup!`/`squash!` and merge commits
 
-### Per-repository additions and adjustments
-
-Add Biome to JS/TS repositories.
-
-```yaml
-  - repo: https://github.com/biomejs/pre-commit
-    rev: v2.5.14
-    hooks:
-      - id: biome-check
-```
-
-Common adjustments:
+### Per-repository adjustments
 
 - Change the `check-yaml` args to `[--unsafe]` for YAML with custom tags,
   such as CloudFormation templates
