@@ -4,6 +4,14 @@ Configuration templates shared across personal repositories.
 
 ## pre-commit
 
+[mise.toml](mise.toml) pins the pre-commit version for this repository.
+With mise installed, set up the tools and Git hooks:
+
+```bash
+mise install
+mise exec -- pre-commit install
+```
+
 [.pre-commit-config.yaml](.pre-commit-config.yaml) is the canonical config
 for personal repositories. pre-commit has no config inheritance, so copy it into
 each new repository.
