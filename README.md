@@ -67,7 +67,7 @@ Allowed types default to `build`, `chore`, `ci`, `docs`, `feat`, `fix`, `perf`, 
 [.github/workflows/pre-commit.yml](.github/workflows/pre-commit.yml) is a reusable workflow that runs all hooks against all files. Call it from each repository with `.github/workflows/pre-commit.yml`:
 
 ```yaml
-name: pre-commit
+name: Pre-commit
 
 on:
   pull_request:

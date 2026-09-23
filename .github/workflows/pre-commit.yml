@@ -2,7 +2,7 @@
 # Other repositories call it with:
 #   uses: iwstkhr/shared-config/.github/workflows/pre-commit.yml@main
 # See README.md for the full caller example.
-name: pre-commit
+name: Pre-commit
 
 on:
   workflow_call:
