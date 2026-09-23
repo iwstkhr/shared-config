@@ -11,10 +11,10 @@ mise install
 mise exec -- pre-commit install
 ```
 
-[.pre-commit-config.yaml](.pre-commit-config.yaml) is the canonical config for personal repositories. pre-commit has no config inheritance, so copy it into each new repository.
+[.pre-commit-config.yaml](.pre-commit-config.yaml) is the canonical config for personal repositories. pre-commit has no config inheritance, so copy it into each new repository, together with [.markdownlint-cli2.yaml](.markdownlint-cli2.yaml), the markdownlint-cli2 config that disables MD013 (line length) and MD029 (ordered list item prefix).
 
 ```bash
-cp ~/git/shared-config/.pre-commit-config.yaml .
+cp ~/git/shared-config/.pre-commit-config.yaml ~/git/shared-config/.markdownlint-cli2.yaml .
 pre-commit install
 ```
 
@@ -32,7 +32,7 @@ After copying, Renovate (`:enablePreCommit`) keeps each repository's `rev` value
 | ruff-check / ruff-format | Python |
 | biome-check | JavaScript / TypeScript |
 | gitleaks | Secret detection |
-| markdownlint | Markdown |
+| markdownlint-cli2 | Markdown |
 | shellcheck | Shell scripts |
 | conventional-pre-commit | Commit messages (`commit-msg` stage) |
 
@@ -60,7 +60,7 @@ Allowed types default to `build`, `chore`, `ci`, `docs`, `feat`, `fix`, `perf`, 
 ### Per-repository adjustments
 
 - Change the `check-yaml` args to `[--unsafe]` for YAML with custom tags, such as CloudFormation templates
-- Add `exclude:` for files that cause false positives, such as generated files (e.g. `exclude: ^src/content/` for markdownlint)
+- Add `exclude:` for files that cause false positives, such as generated files (e.g. `exclude: ^src/content/` for markdownlint-cli2)
 
 ### GitHub Actions
 
