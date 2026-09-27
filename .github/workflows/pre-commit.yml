@@ -6,6 +6,13 @@ name: "[repo] Pre-commit"
 
 on:
   workflow_call:
+    secrets:
+      SLACK_BOT_TOKEN:
+        description: Slack bot token for failure notifications. Notifications are skipped when omitted
+        required: false
+      SLACK_CHANNEL_ID:
+        description: ID of the Slack channel for failure notifications. Notifications are skipped when omitted
+        required: false
   pull_request:
   push:
     branches: [main]
@@ -17,6 +24,9 @@ jobs:
   pre-commit:
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    outputs:
+      # Job-level if conditions cannot read secrets, so expose only whether Slack is configured
+      slack-enabled: ${{ secrets.SLACK_BOT_TOKEN != '' && secrets.SLACK_CHANNEL_ID != '' }}
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -60,3 +70,15 @@ jobs:
 
       - name: Run pre-commit
         run: pre-commit run --all-files --show-diff-on-failure --color=always
+
+  notify:
+    name: Notify
+    needs: pre-commit
+    if: ${{ failure() && needs.pre-commit.outputs.slack-enabled == 'true' }}
+    # Reference this repository explicitly so the call resolves the same way from every caller
+    uses: iwstkhr/shared-config/.github/workflows/slack-notify.yml@main
+    with:
+      status: ${{ needs.pre-commit.result }}
+    secrets:
+      SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+      SLACK_CHANNEL_ID: ${{ secrets.SLACK_CHANNEL_ID }}

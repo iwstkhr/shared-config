@@ -86,6 +86,19 @@ jobs:
     uses: iwstkhr/shared-config/.github/workflows/pre-commit.yml@main
 ```
 
+To get a Slack message when pre-commit fails, pass the Slack secrets described in [Slack notifications](#slack-notifications). The workflow calls [slack-notify.yml](.github/workflows/slack-notify.yml) only on failure, and skips it when either secret is missing, such as in pull requests from forks:
+
+```yaml
+jobs:
+  pre-commit:
+    uses: iwstkhr/shared-config/.github/workflows/pre-commit.yml@main
+    secrets:
+      SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+      SLACK_CHANNEL_ID: ${{ secrets.SLACK_CHANNEL_ID }}
+```
+
+Runs in this repository notify the same way once these secrets are set here.
+
 This repository is public, so any repository can call the workflow without changing its Actions access settings.
 
 ## Slack notifications
