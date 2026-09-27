@@ -30,7 +30,11 @@ jobs:
           python-version: 3.x
 
       - name: Install pre-commit
-        run: python -m pip install pre-commit
+        env:
+          # Keep in sync with mise.toml; Renovate updates both
+          # renovate: datasource=pypi depName=pre-commit
+          PRE_COMMIT_VERSION: 4.6.2
+        run: python -m pip install "pre-commit==${PRE_COMMIT_VERSION}"
 
       # Hook environments are rebuilt only when the config or Python changes
       - name: Cache pre-commit environments
