@@ -61,3 +61,29 @@ Allowed types default to `build`, `chore`, `ci`, `docs`, `feat`, `fix`, `perf`, 
 
 - Change the `check-yaml` args to `[--unsafe]` for YAML with custom tags, such as CloudFormation templates
 - Add `exclude:` for files that cause false positives, such as generated files (e.g. `exclude: ^src/content/` for markdownlint-cli2)
+
+### GitHub Actions
+
+[.github/workflows/pre-commit.yml](.github/workflows/pre-commit.yml) is a reusable workflow that runs all hooks against all files. Call it from each repository with `.github/workflows/pre-commit.yml`:
+
+```yaml
+name: Pre-commit
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  pre-commit:
+    uses: iwstkhr/shared-config/.github/workflows/pre-commit.yml@main
+```
+
+This repository is public, so any repository can call the workflow without changing its Actions access settings.
