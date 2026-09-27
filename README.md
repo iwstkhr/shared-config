@@ -109,6 +109,7 @@ Renovate reads the preset from the default branch, so changes take effect in eve
 | `helpers:pinGitHubActionDigests` | Pin GitHub Actions to digests |
 | `:enablePreCommit` | Enable updates for pre-commit hooks |
 | `customManagers:biomeVersions` | Detect Biome versions with a custom manager |
+| `customManagers:githubActionsVersions` | Update `_VERSION` environment variables marked with `# renovate:` comments in GitHub Actions workflows |
 
 ### Common options
 
