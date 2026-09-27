@@ -1,0 +1,103 @@
+# Reusable workflow that posts a workflow result to a Slack channel.
+# Other repositories call it with:
+#   uses: iwstkhr/shared-config/.github/workflows/slack-notify.yml@main
+# See README.md for the full caller example.
+name: "[repo] Slack Notify"
+
+on:
+  workflow_call:
+    inputs:
+      status:
+        description: Result to report, such as `needs.<job>.result` (success, failure, cancelled, or skipped)
+        type: string
+        required: true
+      message:
+        description: Optional plain-text message shown under the title
+        type: string
+        required: false
+        default: ""
+    secrets:
+      SLACK_BOT_TOKEN:
+        description: Slack bot token with the chat:write scope
+        required: true
+      SLACK_CHANNEL_ID:
+        description: ID of the channel to post to (e.g. C0123456789)
+        required: true
+
+permissions: {}
+
+jobs:
+  notify:
+    name: Notify
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      # The github context here belongs to the caller, so the message points to the caller's run.
+      # Values are passed through env and jq to keep them out of the shell and the JSON syntax.
+      # The payload goes to a file rather than a step output, because it contains the channel secret.
+      - name: Build Slack payload
+        env:
+          SLACK_CHANNEL_ID: ${{ secrets.SLACK_CHANNEL_ID }}
+          STATUS: ${{ inputs.status }}
+          MESSAGE: ${{ inputs.message }}
+          # Pull requests report the head branch and commit instead of the merge ref
+          REF: ${{ github.head_ref || github.ref_name }}
+          SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          case "$STATUS" in
+            success) color="#2eb886"; label=":white_check_mark: Succeeded" ;;
+            failure) color="#a30200"; label=":x: Failed" ;;
+            cancelled) color="#808080"; label=":no_entry_sign: Cancelled" ;;
+            *) color="#daa038"; label=":warning: Status: ${STATUS}" ;;
+          esac
+
+          repo_url="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}"
+
+          # Escape Slack control characters so values cannot inject links or mentions such as <!channel>
+          jq -n \
+            --arg channel "$SLACK_CHANNEL_ID" \
+            --arg color "$color" \
+            --arg label "$label" \
+            --arg message "$MESSAGE" \
+            --arg ref "$REF" \
+            --arg sha "$SHA" \
+            --arg repo_url "$repo_url" \
+            --arg run_url "${repo_url}/actions/runs/${GITHUB_RUN_ID}" \
+            '
+            def esc: gsub("&"; "&amp;") | gsub("<"; "&lt;") | gsub(">"; "&gt;");
+            ($ENV.GITHUB_WORKFLOW | esc) as $workflow
+            | {
+                channel: $channel,
+                text: "\($label): \($workflow) in \($ENV.GITHUB_REPOSITORY)",
+                unfurl_links: false,
+                attachments: [{
+                  color: $color,
+                  blocks: [
+                    {
+                      type: "section",
+                      text: {
+                        type: "mrkdwn",
+                        text: ("*<\($run_url)|\($label): \($workflow)>*"
+                          + (if $message == "" then "" else "\n\($message | esc)" end))
+                      }
+                    },
+                    {
+                      type: "context",
+                      elements: [{
+                        type: "mrkdwn",
+                        text: "<\($repo_url)|\($ENV.GITHUB_REPOSITORY)>  |  `\($ref | esc)`  |  <\($repo_url)/commit/\($sha)|\($sha[0:7])>  |  \($ENV.GITHUB_ACTOR | esc)"
+                      }]
+                    }
+                  ]
+                }]
+              }
+            ' > "${RUNNER_TEMP}/slack-payload.json"
+
+      - name: Post message to Slack
+        uses: slackapi/slack-github-action@dcb1066f776dd043e64d0e8ba94ca15cc7e1875d # v4.0.0
+        with:
+          method: chat.postMessage
+          token: ${{ secrets.SLACK_BOT_TOKEN }}
+          payload-file-path: ${{ runner.temp }}/slack-payload.json
+          # Fail the step when the Slack API returns an error, such as not_in_channel
+          errors: true
