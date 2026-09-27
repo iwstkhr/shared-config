@@ -87,3 +87,45 @@ jobs:
 ```
 
 This repository is public, so any repository can call the workflow without changing its Actions access settings.
+
+## Renovate
+
+[renovate-preset.json](renovate-preset.json) is a shared [Renovate](https://docs.renovatebot.com/) preset. Repositories apply the common dependency update rules by extending it in their Renovate config (e.g. `renovate.json`):
+
+```json
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["github>iwstkhr/shared-config:renovate-preset"]
+}
+```
+
+Renovate reads the preset from the default branch, so changes take effect in every repository once they are merged into `main`.
+
+### Extends
+
+| Preset | Purpose |
+| --- | --- |
+| `config:recommended` | Renovate's recommended settings |
+| `helpers:pinGitHubActionDigests` | Pin GitHub Actions to digests |
+| `:enablePreCommit` | Enable updates for pre-commit hooks |
+| `customManagers:biomeVersions` | Detect Biome versions with a custom manager |
+
+### Common options
+
+- **labels**: Add the `dependencies` label to created PRs
+- **timezone**: `Asia/Tokyo`
+- **dependencyDashboard**: Enable the Dependency Dashboard issue
+- **minimumReleaseAge**: Wait 7 days after a release before updating
+- **rebaseWhen**: Rebase only when there are conflicts
+
+### Lock file maintenance
+
+Creates a lock file maintenance PR before 5:00 AM (Asia/Tokyo) every Monday and automerges it.
+
+### packageRules
+
+| Condition | Behavior |
+| --- | --- |
+| Major updates | Add the `breaking-change` label (no automerge) |
+| Minor / patch updates | Group as `non-major dependencies` and automerge |
+| GitHub Actions pin / digest updates | Automerge |
