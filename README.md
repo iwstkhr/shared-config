@@ -129,3 +129,13 @@ Creates a lock file maintenance PR before 5:00 AM (Asia/Tokyo) every Monday and 
 | Major updates | Add the `breaking-change` label (no automerge) |
 | Minor / patch updates | Group as `non-major dependencies` and automerge |
 | GitHub Actions pin / digest updates | Automerge |
+
+### Validation
+
+[.github/workflows/renovate-validate.yml](.github/workflows/renovate-validate.yml) validates `renovate-preset.json` and `renovate.json` with the [Renovate config validator](https://docs.renovatebot.com/config-validation/) when either file changes. To run the same check locally:
+
+```bash
+npx --yes --package renovate -- renovate-config-validator --strict --no-global renovate-preset.json renovate.json
+```
+
+`--no-global` validates the files as repository config rather than self-hosted global config, and `--strict` also fails when an option needs migration. The validator does not fetch presets referenced in `extends`, so a wrong preset name only shows up on the Dependency Dashboard after Renovate runs.
