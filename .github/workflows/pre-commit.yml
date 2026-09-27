@@ -29,19 +29,34 @@ jobs:
         with:
           python-version: 3.x
 
+      # Repositories with mise.toml get the tools it pins, which hooks may rely on
+      - name: Setup mise
+        if: hashFiles('mise.toml') != ''
+        uses: jdx/mise-action@c2a87611a18de5b3828c5652fe268e992400cb5c # v4.3.0
+        with:
+          # Match minimumReleaseAge in the Renovate preset
+          minimum_release_age: 7d
+
+      # Prefer the pre-commit pinned in mise.toml, and fall back to pip otherwise
       - name: Install pre-commit
         env:
           # Keep in sync with mise.toml; Renovate updates both
           # renovate: datasource=pypi depName=pre-commit
           PRE_COMMIT_VERSION: 4.6.2
-        run: python -m pip install "pre-commit==${PRE_COMMIT_VERSION}"
+        run: |
+          if command -v mise >/dev/null && mise which pre-commit >/dev/null 2>&1; then
+            echo "Using pre-commit from mise.toml"
+          else
+            python -m pip install "pre-commit==${PRE_COMMIT_VERSION}"
+          fi
+          pre-commit --version
 
-      # Hook environments are rebuilt only when the config or Python changes
+      # Hook environments are rebuilt only when the config, mise.toml, or Python changes
       - name: Cache pre-commit environments
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ~/.cache/pre-commit
-          key: pre-commit-${{ runner.os }}-${{ steps.setup-python.outputs.python-version }}-${{ hashFiles('.pre-commit-config.yaml') }}
+          key: pre-commit-${{ runner.os }}-${{ steps.setup-python.outputs.python-version }}-${{ hashFiles('.pre-commit-config.yaml', 'mise.toml') }}
 
       - name: Run pre-commit
         run: pre-commit run --all-files --show-diff-on-failure --color=always
