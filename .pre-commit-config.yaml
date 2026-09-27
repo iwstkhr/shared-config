@@ -1,0 +1,72 @@
+# Shared pre-commit config template for all repositories.
+# Copy it into each repository; Renovate keeps the rev values up to date.
+# Hooks with no matching files are skipped, so unused hooks can stay in place.
+# See README.md for per-repository adjustments, such as excluding generated files.
+# Install both hook types so the commit-msg hook runs: pre-commit install
+default_install_hook_types: [pre-commit, commit-msg]
+# Limit hooks to the pre-commit stage unless a hook declares its own stage,
+# so committing does not run every hook again on the commit-msg stage
+default_stages: [pre-commit]
+
+repos:
+  ##########################################################
+  # Base configs
+  ##########################################################
+  # General file fixers and syntax checks
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v6.0.0
+    hooks:
+      # Change to [--unsafe] for YAML with custom tags, such as CloudFormation
+      - id: check-yaml
+        args: [--allow-multiple-documents]
+      - id: end-of-file-fixer
+        exclude: \.svg$
+      - id: trailing-whitespace
+        exclude: \.svg$
+
+  # Lint GitHub Actions workflows
+  - repo: https://github.com/rhysd/actionlint
+    rev: v1.7.12
+    hooks:
+      - id: actionlint
+
+  # Check commit messages against Conventional Commits (commit-msg stage)
+  - repo: https://github.com/compilerla/conventional-pre-commit
+    rev: v4.4.0
+    hooks:
+      - id: conventional-pre-commit
+
+  # Detect secrets such as API keys and tokens
+  - repo: https://github.com/gitleaks/gitleaks
+    rev: v8.30.1
+    hooks:
+      - id: gitleaks
+
+  # Lint Markdown
+  - repo: https://github.com/DavidAnson/markdownlint-cli2
+    rev: v0.23.3
+    hooks:
+      - id: markdownlint-cli2
+
+  # Lint shell scripts
+  - repo: https://github.com/koalaman/shellcheck-precommit
+    rev: v0.11.0
+    hooks:
+      - id: shellcheck
+
+  ##########################################################
+  # Language configs
+  ##########################################################
+  # Lint JavaScript and TypeScript files with Biome
+  - repo: https://github.com/biomejs/pre-commit
+    rev: v2.5.13 # Use the sha / tag you want to point at
+    hooks:
+      - id: biome-check
+
+  # Lint and format Python files with Ruff
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.16.8
+    hooks:
+      - id: ruff-check
+        args: [--fix]
+      - id: ruff-format
