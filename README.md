@@ -67,7 +67,7 @@ Allowed types default to `build`, `chore`, `ci`, `docs`, `feat`, `fix`, `perf`, 
 [.github/workflows/pre-commit.yml](.github/workflows/pre-commit.yml) is a reusable workflow that runs all hooks against all files. It installs the same pre-commit version as [mise.toml](mise.toml), and Renovate updates both through `customManagers:githubActionsVersions` in the shared preset. When the calling repository has a `mise.toml`, the workflow also sets up [mise](https://mise.jdx.dev/) and installs the tools it pins, and uses the pre-commit from `mise.toml` if it is listed there. Otherwise it installs pre-commit with pip. Call it from each repository with `.github/workflows/pre-commit.yml`:
 
 ```yaml
-name: Pre-commit
+name: "[repo] Pre-commit"
 
 on:
   pull_request:
