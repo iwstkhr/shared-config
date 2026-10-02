@@ -2,7 +2,7 @@
 # Other repositories call it with:
 #   uses: iwstkhr/shared-config/.github/workflows/slack-notify.yml@main
 # See README.md for the full caller example.
-name: "[repo] Slack Notify"
+name: "repo - Slack Notify"
 
 on:
   workflow_call:

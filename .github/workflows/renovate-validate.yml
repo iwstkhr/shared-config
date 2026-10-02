@@ -1,5 +1,5 @@
 # Validates the shared Renovate preset and this repository's Renovate config.
-name: "[repo] Renovate Validate"
+name: "repo - Renovate Validate"
 
 on:
   pull_request:
