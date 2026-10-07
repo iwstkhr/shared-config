@@ -20,7 +20,8 @@
   "packageRules": [
     {
       "matchUpdateTypes": ["major"],
-      "labels": ["breaking-change"]
+      "labels": ["breaking-change"],
+      "reviewers": ["iwstkhr"]
     },
     {
       "matchUpdateTypes": ["minor", "patch"],
