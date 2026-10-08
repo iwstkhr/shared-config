@@ -1,4 +1,4 @@
-# Post Codex, security, and Claude review requests for open Renovate breaking-change PRs.
+# Post Codex, security, and Claude review requests for open Renovate PRs labeled ai-review.
 name: "repo - Renovate Review Requests"
 
 on:
@@ -23,7 +23,7 @@ jobs:
       github.event_name == 'pull_request_target' &&
       github.event.pull_request.user.login == 'renovate[bot]' &&
       github.event.pull_request.state == 'open' &&
-      contains(github.event.pull_request.labels.*.name, 'breaking-change')
+      contains(github.event.pull_request.labels.*.name, 'ai-review')
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
@@ -41,7 +41,7 @@ jobs:
           if ! jq -e '
             .state == "open" and
             .user.login == "renovate[bot]" and
-            any(.labels[]; .name == "breaking-change")
+            any(.labels[]; .name == "ai-review")
           ' <<< "$pr" > /dev/null; then
             echo "PR is no longer eligible; skipping."
             exit 0

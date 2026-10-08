@@ -14,6 +14,7 @@
   "rebaseWhen": "conflicted",
   "lockFileMaintenance": {
     "enabled": true,
+    "addLabels": ["ai-review"],
     "automerge": true,
     "schedule": ["before 5am on monday"]
   },
@@ -21,6 +22,7 @@
     {
       "matchUpdateTypes": ["major"],
       "labels": ["breaking-change"],
+      "addLabels": ["ai-review"],
       "reviewers": ["iwstkhr"]
     },
     {

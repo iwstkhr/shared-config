@@ -177,19 +177,19 @@ Renovate reads the preset from the default branch, so changes take effect in eve
 
 ### Lock file maintenance
 
-Creates a lock file maintenance PR before 5:00 AM (Asia/Tokyo) every Monday and automerges it.
+Creates a lock file maintenance PR before 5:00 AM (Asia/Tokyo) every Monday, adds the `ai-review` label, and automerges it. The label also triggers the three automated review requests below. Reviews are requested asynchronously; automerge does not wait for their completion.
 
 ### packageRules
 
 | Condition | Behavior |
 | --- | --- |
-| Major updates | Add the `breaking-change` label and request review from `iwstkhr` when the PR is created (no automerge) |
+| Major updates | Add the `breaking-change` and `ai-review` labels and request review from `iwstkhr` when the PR is created (no automerge) |
 | Minor / patch updates | Group as `non-major dependencies` and automerge |
 | GitHub Actions pin / digest updates | Automerge |
 
 ### Automated review requests
 
-[.github/workflows/renovate-review-requests.yml](.github/workflows/renovate-review-requests.yml) posts `@codex review`, `@codex security review`, and `@claude review` as separate comments when an open PR authored by `renovate[bot]` has the `breaking-change` label. It handles PR creation, reopening, and label additions, rechecks the current PR state, and checks each command separately and skips posting it if an exact request already exists on any comment page. If a run fails after posting some requests, the next run posts only the missing ones. Concurrent runs for the same PR are serialized. Reopening a PR does not repeat requests whose original comments remain.
+[.github/workflows/renovate-review-requests.yml](.github/workflows/renovate-review-requests.yml) posts `@codex review`, `@codex security review`, and `@claude review` as separate comments when an open PR authored by `renovate[bot]` has the `ai-review` label. The shared preset adds this dedicated review label to major updates and lock file maintenance PRs. Other Renovate PRs can opt in by adding the same label. It handles PR creation, reopening, and label additions, rechecks the current PR state, and checks each command separately and skips posting it if an exact request already exists on any comment page. If a run fails after posting some requests, the next run posts only the missing ones. Concurrent runs for the same PR are serialized. Reopening a PR does not repeat requests whose original comments remain.
 
 The workflow reads PR metadata without checking out PR code. It runs directly in this repository. Other repositories must add the following caller; inheriting the Renovate preset alone does not install GitHub Actions workflows:
 
@@ -208,7 +208,7 @@ jobs:
     if: >-
       github.event.pull_request.user.login == 'renovate[bot]' &&
       github.event.pull_request.state == 'open' &&
-      contains(github.event.pull_request.labels.*.name, 'breaking-change')
+      contains(github.event.pull_request.labels.*.name, 'ai-review')
     uses: iwstkhr/shared-config/.github/workflows/renovate-review-requests.yml@main
     secrets:
       CODEX_REVIEW_TOKEN: ${{ secrets.CODEX_REVIEW_TOKEN }}
