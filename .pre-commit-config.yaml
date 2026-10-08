@@ -77,5 +77,6 @@ repos:
     rev: v0.16.8
     hooks:
       - id: ruff-check
-        args: [--fix]
+        # --extend-select S adds the flake8-bandit security rules on top of the repository's Ruff config
+        args: [--fix, --extend-select, S]
       - id: ruff-format

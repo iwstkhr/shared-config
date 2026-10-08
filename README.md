@@ -29,7 +29,7 @@ After copying, Renovate (`:enablePreCommit`) keeps each repository's `rev` value
 | check-yaml | YAML syntax |
 | end-of-file-fixer / trailing-whitespace | All files |
 | actionlint | `.github/workflows/*.yml` |
-| ruff-check / ruff-format | Python |
+| ruff-check / ruff-format | Python, including Bandit security rules (`S`) |
 | biome-check | JavaScript / TypeScript |
 | gitleaks | Secret detection |
 | semgrep | Static analysis for security issues and bugs |
@@ -72,6 +72,18 @@ Useful changes per repository:
 - Add rulesets for the languages in use, e.g. `[--config, p/default, --config, p/python, ...]`
 - Point `--config` at a rules file in the repository, e.g. `.semgrep.yml`, to run without network access
 - Add `.semgrepignore` to skip paths such as generated files or test fixtures
+
+### Ruff security rules
+
+`ruff-check` runs with `--extend-select S`, which adds the [flake8-bandit](https://docs.astral.sh/ruff/rules/#flake8-bandit-s) rules, Ruff's port of [Bandit](https://bandit.readthedocs.io/), to whatever rules the repository's Ruff config selects. The flag extends rather than replaces the selection, so `select` and `extend-select` in `pyproject.toml` or `ruff.toml` keep working.
+
+- To ignore a false positive, add a `# noqa: <rule>` comment on the reported line, e.g. `# noqa: S603`
+- `S101` flags every `assert`, including those in pytest tests. Ignore it for tests in the repository's Ruff config:
+
+```toml
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["S101"]
+```
 
 ### Per-repository adjustments
 
