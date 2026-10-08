@@ -33,6 +33,7 @@ After copying, Renovate (`:enablePreCommit`) keeps each repository's `rev` value
 | biome-check | JavaScript / TypeScript |
 | gitleaks | Secret detection |
 | semgrep | Static analysis for security issues and bugs |
+| trivyfs-docker | Dependency vulnerabilities and IaC misconfigurations (Trivy) |
 | markdownlint-cli2 | Markdown |
 | shellcheck | Shell scripts |
 | conventional-pre-commit | Commit messages (`commit-msg` stage) |
@@ -72,6 +73,28 @@ Useful changes per repository:
 - Add rulesets for the languages in use, e.g. `[--config, p/default, --config, p/python, ...]`
 - Point `--config` at a rules file in the repository, e.g. `.semgrep.yml`, to run without network access
 - Add `.semgrepignore` to skip paths such as generated files or test fixtures
+
+### Trivy
+
+`trivyfs-docker` from [mxab/pre-commit-trivy](https://github.com/mxab/pre-commit-trivy) runs [Trivy](https://trivy.dev/) in the `aquasec/trivy` Docker image and fails the commit on any HIGH or CRITICAL finding. Some details to keep in mind:
+
+- Docker must be running locally. GitHub-hosted Ubuntu runners have it preinstalled
+- The hook scans the whole repository rather than the staged files, so it runs on every commit
+- The vulnerability database is downloaded on the first run and when it goes stale, so the hook needs network access
+- The cache is written to `.pre-commit-trivy-cache` in the repository. Add it to `.gitignore`
+- `--scanners vuln,misconfig` skips Trivy's secret scanner, since gitleaks already covers secrets
+- Trivy does not read `.gitignore`, so `--skip-dirs "**/node_modules"` and `--skip-dirs "**/.venv"` keep it out of installed dependencies at any depth. Lockfiles and `requirements.txt` are still scanned
+- `args` replace the hook's default args, and the last one must be the path to scan (`.`)
+
+```bash
+echo ".pre-commit-trivy-cache/" >> .gitignore
+```
+
+Useful changes per repository:
+
+- Widen `--severity`, e.g. `MEDIUM,HIGH,CRITICAL`, or add `--ignore-unfixed` to skip vulnerabilities with no fix
+- Add more `--skip-dirs <dir>` before `.` to skip paths such as test fixtures
+- Add `.trivyignore` with one CVE or check ID per line to ignore a false positive
 
 ### Ruff security rules
 
