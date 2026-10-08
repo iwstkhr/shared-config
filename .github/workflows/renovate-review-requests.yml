@@ -1,0 +1,62 @@
+# Post Codex, security, and Claude review requests for open Renovate breaking-change PRs.
+name: "repo - Renovate Review Requests"
+
+on:
+  pull_request_target:
+    types: [opened, reopened, labeled]
+  workflow_call:
+    secrets:
+      CODEX_REVIEW_TOKEN:
+        description: Optional user token for posting review requests as a user
+        required: false
+
+permissions:
+  pull-requests: write
+
+concurrency:
+  group: renovate-review-requests-${{ github.repository }}-${{ github.event.pull_request.number }}
+  cancel-in-progress: false
+
+jobs:
+  request-review:
+    if: >-
+      github.event_name == 'pull_request_target' &&
+      github.event.pull_request.user.login == 'renovate[bot]' &&
+      github.event.pull_request.state == 'open' &&
+      contains(github.event.pull_request.labels.*.name, 'breaking-change')
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      # Only use PR metadata; never check out or execute the PR's code.
+      - name: Request reviews once
+        env:
+          GH_TOKEN: ${{ secrets.CODEX_REVIEW_TOKEN || github.token }}
+          GH_REPO: ${{ github.repository }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          pr=$(gh api "repos/${GH_REPO}/pulls/${PR_NUMBER}")
+          if ! jq -e '
+            .state == "open" and
+            .user.login == "renovate[bot]" and
+            any(.labels[]; .name == "breaking-change")
+          ' <<< "$pr" > /dev/null; then
+            echo "PR is no longer eligible; skipping."
+            exit 0
+          fi
+
+          comments=$(gh api --paginate --slurp "repos/${GH_REPO}/issues/${PR_NUMBER}/comments?per_page=100")
+          for request in '@codex review' '@codex security review' '@claude review'; do
+            if jq -e --arg request "$request" '
+              any(.[][]; ((.body // "") | gsub("^\\s+|\\s+$"; "")) == $request)
+            ' <<< "$comments" > /dev/null; then
+              echo "Already requested: ${request}; skipping."
+              continue
+            fi
+
+            gh api --method POST "repos/${GH_REPO}/issues/${PR_NUMBER}/comments" \
+              -f "body=${request}" > /dev/null
+            echo "Requested: ${request}"
+          done

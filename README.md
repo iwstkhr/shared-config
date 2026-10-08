@@ -187,6 +187,41 @@ Creates a lock file maintenance PR before 5:00 AM (Asia/Tokyo) every Monday and 
 | Minor / patch updates | Group as `non-major dependencies` and automerge |
 | GitHub Actions pin / digest updates | Automerge |
 
+### Automated review requests
+
+[.github/workflows/renovate-review-requests.yml](.github/workflows/renovate-review-requests.yml) posts `@codex review`, `@codex security review`, and `@claude review` as separate comments when an open PR authored by `renovate[bot]` has the `breaking-change` label. It handles PR creation, reopening, and label additions, rechecks the current PR state, and checks each command separately and skips posting it if an exact request already exists on any comment page. If a run fails after posting some requests, the next run posts only the missing ones. Concurrent runs for the same PR are serialized. Reopening a PR does not repeat requests whose original comments remain.
+
+The workflow reads PR metadata without checking out PR code. It runs directly in this repository. Other repositories must add the following caller; inheriting the Renovate preset alone does not install GitHub Actions workflows:
+
+```yaml
+name: "repo - Renovate Review Requests"
+
+on:
+  pull_request_target:
+    types: [opened, reopened, labeled]
+
+permissions:
+  pull-requests: write
+
+jobs:
+  request-review:
+    if: >-
+      github.event.pull_request.user.login == 'renovate[bot]' &&
+      github.event.pull_request.state == 'open' &&
+      contains(github.event.pull_request.labels.*.name, 'breaking-change')
+    uses: iwstkhr/shared-config/.github/workflows/renovate-review-requests.yml@main
+    secrets:
+      CODEX_REVIEW_TOKEN: ${{ secrets.CODEX_REVIEW_TOKEN }}
+```
+
+Merge the reusable workflow into this repository's `main` before merging callers elsewhere. Each caller must be on its repository's default branch to receive `pull_request_target` events. Already-open PRs are handled on their next reopening or label-addition event; this does not backfill comments immediately.
+
+By default, the requests are posted using `GITHUB_TOKEN`. To post as a user instead, register the optional `CODEX_REVIEW_TOKEN` secret in each repository with a fine-grained personal access token granting **Pull requests: Read and write** on that repository. The token owner should have access to the configured review integrations and the repository.
+
+[Codex code review](https://learn.chatgpt.com/docs/third-party/github) must be enabled for each connected repository. Official documentation describes the comment trigger but does not guarantee that bot-authored requests start reviews. Verify that Codex reacts to the first automated request; if it ignores the bot comment, configure `CODEX_REVIEW_TOKEN` and remove the ignored request before retrying the event.
+
+Configure Codex Security Review and a Claude integration that handles `@claude review` on each target repository. This workflow posts the commands; it does not install or configure either reviewer.
+
 ### Validation
 
 [.github/workflows/renovate-validate.yml](.github/workflows/renovate-validate.yml) validates `renovate-preset.json` and `renovate.json` with the [Renovate config validator](https://docs.renovatebot.com/config-validation/) when either file changes. To run the same check locally:
