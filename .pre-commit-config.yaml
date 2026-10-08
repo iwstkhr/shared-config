@@ -42,6 +42,15 @@ repos:
     hooks:
       - id: gitleaks
 
+  # Static analysis for security issues and bugs
+  - repo: https://github.com/semgrep/pre-commit
+    rev: v1.180.0
+    hooks:
+      - id: semgrep
+        # args replace the hook defaults, so keep --skip-unknown-extensions and the others here
+        # --error makes findings fail the commit; the ruleset is fetched from the Semgrep Registry on each run
+        args: [--config, p/default, --error, --skip-unknown-extensions, --disable-version-check, --quiet]
+
   # Lint Markdown
   - repo: https://github.com/DavidAnson/markdownlint-cli2
     rev: v0.23.3

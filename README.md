@@ -32,6 +32,7 @@ After copying, Renovate (`:enablePreCommit`) keeps each repository's `rev` value
 | ruff-check / ruff-format | Python |
 | biome-check | JavaScript / TypeScript |
 | gitleaks | Secret detection |
+| semgrep | Static analysis for security issues and bugs |
 | markdownlint-cli2 | Markdown |
 | shellcheck | Shell scripts |
 | conventional-pre-commit | Commit messages (`commit-msg` stage) |
@@ -56,6 +57,21 @@ Allowed types default to `build`, `chore`, `ci`, `docs`, `feat`, `fix`, `perf`, 
 - `[feat, fix, docs, chore]` narrows the allowed types (`feat` and `fix` are always allowed)
 - `[--force-scope]` requires a scope, `[--scopes, api,client]` restricts it
 - `[--strict]` also rejects `fixup!`/`squash!` and merge commits
+
+### Semgrep
+
+`semgrep` scans staged files with the [`p/default`](https://semgrep.dev/p/default) ruleset and fails the commit on any finding (`--error`). Some details to keep in mind:
+
+- The ruleset is downloaded from the Semgrep Registry on every run, so the hook needs network access and fails offline
+- `args` replace the hook's default args, so the config repeats `--skip-unknown-extensions`, `--disable-version-check`, and `--quiet`. Keep them when changing `args`
+- The rulesets are named explicitly rather than using `--config auto`, which requires sending metrics to Semgrep
+- To ignore a false positive, add a `# nosemgrep: <rule-id>` comment on the reported line
+
+Useful changes per repository:
+
+- Add rulesets for the languages in use, e.g. `[--config, p/default, --config, p/python, ...]`
+- Point `--config` at a rules file in the repository, e.g. `.semgrep.yml`, to run without network access
+- Add `.semgrepignore` to skip paths such as generated files or test fixtures
 
 ### Per-repository adjustments
 
