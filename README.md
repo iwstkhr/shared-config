@@ -20,7 +20,7 @@ pre-commit install
 
 `default_install_hook_types` in the config makes `pre-commit install` set up both the `pre-commit` and the `commit-msg` hook, so no extra flags are needed. Repositories that ran `pre-commit install` before the `commit-msg` hook was added need to run it once more.
 
-After copying, Renovate (`:enablePreCommit`) keeps each repository's `rev` values up to date.
+After copying, Renovate (`:enablePreCommit`) keeps each repository's `rev` values up to date. Each `rev` is pinned to a commit SHA with a `# frozen: <tag>` comment, and Renovate updates both the SHA and the tag. A bare SHA without the comment is treated as a version and is not updated correctly, so keep the comment when adding a hook. `pre-commit autoupdate --freeze` writes the same format.
 
 ### Included hooks
 
