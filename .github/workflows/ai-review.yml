@@ -1,4 +1,4 @@
-# Reusable workflow that reviews a pull request with Claude Code and Codex when the `ai-review` label is added.
+# Reusable workflow that reviews a pull request with Claude Code, Codex, and Cursor when the `ai-review` label is added.
 # Other repositories call it with:
 #   uses: iwstkhr/shared-config/.github/workflows/ai-review.yml@main
 # See README.md for the full caller example.
@@ -32,6 +32,11 @@ on:
         type: boolean
         required: false
         default: true
+      enable_cursor:
+        description: Review with Cursor. The review is also skipped when CURSOR_API_KEY is not set
+        type: boolean
+        required: false
+        default: true
     secrets:
       CLAUDE_CODE_OAUTH_TOKEN:
         description: Claude Code OAuth token from `claude setup-token`. Set this or ANTHROPIC_API_KEY
@@ -41,6 +46,9 @@ on:
         required: false
       OPENAI_API_KEY:
         description: OpenAI API key for the Codex review. The Codex review is skipped when this is not set
+        required: false
+      CURSOR_API_KEY:
+        description: Cursor API key for the Cursor review. The Cursor review is skipped when this is not set
         required: false
   pull_request:
     types: [labeled]
@@ -213,4 +221,117 @@ jobs:
               repo: context.repo.repo,
               issue_number: context.payload.pull_request.number,
               body: `## Codex review\n\n${process.env.REVIEW}`,
+            });
+
+  cursor:
+    name: Cursor
+    # Same conditions as the claude job, except for the enable input
+    if: >-
+      github.event_name == 'pull_request'
+      && github.event.action == 'labeled'
+      && github.event.label.name == (inputs.label || 'ai-review')
+      && github.event.pull_request.head.repo.full_name == github.repository
+      && toJSON(inputs.enable_cursor) != 'false'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    concurrency:
+      group: ai-review-cursor-${{ github.repository }}-${{ github.event.pull_request.number }}
+      cancel-in-progress: true
+    # Cursor gets a read-only token. The cursor-comment job posts its result.
+    permissions:
+      contents: read
+    outputs:
+      review: ${{ steps.cursor.outputs.review }}
+    steps:
+      - name: Check Cursor API key
+        id: key
+        env:
+          CURSOR_API_KEY: ${{ secrets.CURSOR_API_KEY }}
+        run: |
+          if [ -n "$CURSOR_API_KEY" ]; then
+            echo "present=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "::notice::CURSOR_API_KEY is not set, so the Cursor review is skipped"
+          fi
+
+      - name: Checkout
+        if: steps.key.outputs.present == 'true'
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: refs/pull/${{ github.event.pull_request.number }}/merge
+          persist-credentials: false
+
+      # Cursor runs in ask mode, which cannot run shell commands, so write the diff to a file beforehand
+      - name: Write the diff
+        if: steps.key.outputs.present == 'true'
+        env:
+          BASE_REF: ${{ github.event.pull_request.base.ref }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          git fetch --no-tags origin "$BASE_REF" "+refs/pull/$PR_NUMBER/head"
+          git diff "$BASE_SHA...$HEAD_SHA" > "$RUNNER_TEMP/pr.diff"
+
+      # The official installer always installs the latest version and publishes no checksum, so it cannot be pinned
+      - name: Install Cursor CLI
+        if: steps.key.outputs.present == 'true'
+        run: |
+          curl -fsS -o "$RUNNER_TEMP/cursor-install.sh" https://cursor.com/install
+          bash "$RUNNER_TEMP/cursor-install.sh"
+          echo "$HOME/.cursor/bin" >> "$GITHUB_PATH"
+
+      - name: Review with Cursor
+        id: cursor
+        if: steps.key.outputs.present == 'true'
+        env:
+          CURSOR_API_KEY: ${{ secrets.CURSOR_API_KEY }}
+          PROMPT: |
+            REPO: ${{ github.repository }}
+            PR NUMBER: ${{ github.event.pull_request.number }}
+
+            Review only the changes introduced by this pull request.
+            The diff is in ${{ runner.temp }}/pr.diff, and the merged code is checked out in the workspace.
+
+            Focus on:
+
+            1. Correctness: bugs, edge cases, and error handling
+            2. Security: vulnerabilities, secret exposure, and unsafe input handling
+            3. Breaking changes: for dependency updates, check whether this repository's usage is affected
+            4. Maintainability: readability, and whether tests and documentation follow the change
+
+            Reply in Markdown with the overall assessment followed by specific issues, each with its file and line.
+            Do not comment on style issues that linters already catch.
+
+            ${{ inputs.extra_prompt }}
+        run: |
+          review=$(agent -p --trust --mode ask --output-format json "$PROMPT" | jq -r '.result')
+          delimiter="EOF_$(openssl rand -hex 8)"
+          {
+            echo "review<<$delimiter"
+            echo "$review"
+            echo "$delimiter"
+          } >> "$GITHUB_OUTPUT"
+
+  cursor-comment:
+    name: Cursor comment
+    needs: cursor
+    if: needs.cursor.outputs.review != ''
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      issues: write
+      pull-requests: write
+    steps:
+      - name: Post the Cursor review
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        env:
+          REVIEW: ${{ needs.cursor.outputs.review }}
+        with:
+          script: |
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.payload.pull_request.number,
+              body: `## Cursor review\n\n${process.env.REVIEW}`,
             });
