@@ -163,15 +163,9 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: refs/pull/${{ github.event.pull_request.number }}/merge
+          # Fetch the full history so the base and head commits are available without credentials
+          fetch-depth: 0
           persist-credentials: false
-
-      # Codex runs without network access, so fetch the refs it needs to compare beforehand
-      - name: Fetch base and head refs
-        if: steps.key.outputs.present == 'true'
-        env:
-          BASE_REF: ${{ github.event.pull_request.base.ref }}
-          PR_NUMBER: ${{ github.event.pull_request.number }}
-        run: git fetch --no-tags origin "$BASE_REF" "+refs/pull/$PR_NUMBER/head"
 
       - name: Review with Codex
         id: codex
@@ -259,19 +253,17 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: refs/pull/${{ github.event.pull_request.number }}/merge
+          # Fetch the full history so the base and head commits are available without credentials
+          fetch-depth: 0
           persist-credentials: false
 
       # Cursor runs in ask mode, which cannot run shell commands, so write the diff to a file beforehand
       - name: Write the diff
         if: steps.key.outputs.present == 'true'
         env:
-          BASE_REF: ${{ github.event.pull_request.base.ref }}
           BASE_SHA: ${{ github.event.pull_request.base.sha }}
           HEAD_SHA: ${{ github.event.pull_request.head.sha }}
-          PR_NUMBER: ${{ github.event.pull_request.number }}
-        run: |
-          git fetch --no-tags origin "$BASE_REF" "+refs/pull/$PR_NUMBER/head"
-          git diff "$BASE_SHA...$HEAD_SHA" > "$RUNNER_TEMP/pr.diff"
+        run: git diff "$BASE_SHA...$HEAD_SHA" > "$RUNNER_TEMP/pr.diff"
 
       # The official installer always installs the latest version and publishes no checksum, so it cannot be pinned
       - name: Install Cursor CLI
