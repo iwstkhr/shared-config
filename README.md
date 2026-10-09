@@ -242,6 +242,8 @@ jobs:
 | --- | --- | --- |
 | `label` | `ai-review` | Label that triggers the review |
 | `allowed_bots` | `renovate[bot]` | Comma-separated bot usernames allowed to trigger the review by adding the label. Users need write access to the repository. Applies to both Claude and Codex |
+| `enable_claude` | `true` | Review with Claude Code |
+| `enable_codex` | `true` | Review with Codex. The review is also skipped when `OPENAI_API_KEY` is not set |
 | `extra_prompt` | `""` | Additional instructions appended to both review prompts, e.g. `Write the review in Japanese.` |
 
 Runs in this repository review the same way once one of the secrets is set here.

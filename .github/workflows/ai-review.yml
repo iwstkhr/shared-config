@@ -22,6 +22,16 @@ on:
         type: string
         required: false
         default: ""
+      enable_claude:
+        description: Review with Claude Code
+        type: boolean
+        required: false
+        default: true
+      enable_codex:
+        description: Review with Codex. The review is also skipped when OPENAI_API_KEY is not set
+        type: boolean
+        required: false
+        default: true
     secrets:
       CLAUDE_CODE_OAUTH_TOKEN:
         description: Claude Code OAuth token from `claude setup-token`. Set this or ANTHROPIC_API_KEY
@@ -42,11 +52,13 @@ jobs:
     name: Claude
     # The github context belongs to the caller. Inputs are empty when this repository runs the workflow directly.
     # Pull requests from forks are skipped because they cannot read the secrets.
+    # toJSON() treats a missing input as enabled, since `null == false` is true in expressions.
     if: >-
       github.event_name == 'pull_request'
       && github.event.action == 'labeled'
       && github.event.label.name == (inputs.label || 'ai-review')
       && github.event.pull_request.head.repo.full_name == github.repository
+      && toJSON(inputs.enable_claude) != 'false'
     runs-on: ubuntu-latest
     timeout-minutes: 30
     concurrency:
@@ -95,12 +107,13 @@ jobs:
 
   codex:
     name: Codex
-    # Same conditions as the claude job
+    # Same conditions as the claude job, except for the enable input
     if: >-
       github.event_name == 'pull_request'
       && github.event.action == 'labeled'
       && github.event.label.name == (inputs.label || 'ai-review')
       && github.event.pull_request.head.repo.full_name == github.repository
+      && toJSON(inputs.enable_codex) != 'false'
     runs-on: ubuntu-latest
     timeout-minutes: 30
     concurrency:
