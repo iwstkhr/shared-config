@@ -60,7 +60,9 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 1
-          persist-credentials: false
+          # Keep the credentials: claude-code-action runs `git fetch` for the PR branch
+          # before it configures its own auth, which fails on private repositories.
+          persist-credentials: true
 
       - name: Review with Claude Code
         uses: anthropics/claude-code-action@97c53473391bff1901034d4b454b5bac7ab7a029 # v1.0.239
