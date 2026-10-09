@@ -234,7 +234,7 @@ Creates a lock file maintenance PR before 5:00 AM (Asia/Tokyo) every Monday and 
 
 | Condition | Behavior |
 | --- | --- |
-| Major updates | Add the `breaking-change` label and request review from `iwstkhr` when the PR is created (no automerge) |
+| Major updates | Add the `breaking-change` and `ai-review` labels alongside `dependencies` and request review from `iwstkhr` when the PR is created (no automerge) |
 | Minor / patch updates | Group as `non-major dependencies` and automerge |
 | GitHub Actions pin / digest updates | Automerge |
 
