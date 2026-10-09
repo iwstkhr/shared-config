@@ -202,7 +202,7 @@ If the Slack API returns an error, such as `not_in_channel` or `invalid_auth`, t
 ### AI review setup
 
 1. Install the [Claude GitHub App](https://github.com/apps/claude) on the calling repository
-2. Store one of these as a secret in the calling repository:
+2. Store one of these as a secret in the calling repository to enable the Claude review. Without either, the Claude review is skipped:
    - `CLAUDE_CODE_OAUTH_TOKEN`: generated with `claude setup-token` (uses a Claude subscription)
    - `ANTHROPIC_API_KEY`: an Anthropic API key
 3. Optionally store `OPENAI_API_KEY` (an OpenAI API key) as a secret to enable the Codex review. Without it, the Codex review is skipped
@@ -242,7 +242,7 @@ jobs:
 | --- | --- | --- |
 | `label` | `ai-review` | Label that triggers the review |
 | `allowed_bots` | `renovate[bot]` | Comma-separated bot usernames allowed to trigger the review by adding the label. Users need write access to the repository. Applies to both Claude and Codex |
-| `enable_claude` | `true` | Review with Claude Code |
+| `enable_claude` | `true` | Review with Claude Code. The review is also skipped when neither `CLAUDE_CODE_OAUTH_TOKEN` nor `ANTHROPIC_API_KEY` is set |
 | `enable_codex` | `true` | Review with Codex. The review is also skipped when `OPENAI_API_KEY` is not set |
 | `extra_prompt` | `""` | Additional instructions appended to both review prompts, e.g. `Write the review in Japanese.` |
 
