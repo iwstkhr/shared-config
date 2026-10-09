@@ -197,7 +197,7 @@ If the Slack API returns an error, such as `not_in_channel` or `invalid_auth`, t
 
 ## AI review
 
-[.github/workflows/ai-review.yml](.github/workflows/ai-review.yml) is a reusable workflow that reviews a pull request with [Claude Code GitHub Actions](https://github.com/anthropics/claude-code-action) when the `ai-review` label is added. Claude posts a tracking comment with progress and a summary, plus inline comments on specific issues. Renovate adds the label to major updates (see [packageRules](#packagerules)), so those PRs are reviewed automatically.
+[.github/workflows/ai-review.yml](.github/workflows/ai-review.yml) is a reusable workflow that reviews a pull request with [Claude Code GitHub Actions](https://github.com/anthropics/claude-code-action) and [Codex GitHub Action](https://github.com/openai/codex-action) when the `ai-review` label is added. Claude posts a tracking comment with progress and a summary, plus inline comments on specific issues. Codex runs in a separate job and posts its review as one comment. Renovate adds the label to major updates (see [packageRules](#packagerules)), so those PRs are reviewed automatically.
 
 ### AI review setup
 
@@ -205,7 +205,8 @@ If the Slack API returns an error, such as `not_in_channel` or `invalid_auth`, t
 2. Store one of these as a secret in the calling repository:
    - `CLAUDE_CODE_OAUTH_TOKEN`: generated with `claude setup-token` (uses a Claude subscription)
    - `ANTHROPIC_API_KEY`: an Anthropic API key
-3. Create the `ai-review` label in the calling repository
+3. Optionally store `OPENAI_API_KEY` (an OpenAI API key) as a secret to enable the Codex review. Without it, the Codex review is skipped
+4. Create the `ai-review` label in the calling repository
 
 ### Calling the AI review workflow
 
@@ -229,17 +230,19 @@ jobs:
     uses: iwstkhr/shared-config/.github/workflows/ai-review.yml@main
     secrets:
       CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
 ```
 
 - The caller must grant the permissions above, because a reusable workflow cannot exceed them
 - Adding any other label does not start a review, and pull requests from forks are skipped because they cannot read the secrets
 - Removing and adding the label again runs a new review, cancelling one still in progress
+- The Claude and Codex reviews run in parallel as the `Claude` and `Codex` jobs
 
 | Input | Default | Description |
 | --- | --- | --- |
 | `label` | `ai-review` | Label that triggers the review |
-| `allowed_bots` | `renovate[bot]` | Comma-separated bot usernames allowed to trigger the review by adding the label. Users need write access to the repository |
-| `extra_prompt` | `""` | Additional instructions appended to the review prompt, e.g. `Write the review in Japanese.` |
+| `allowed_bots` | `renovate[bot]` | Comma-separated bot usernames allowed to trigger the review by adding the label. Users need write access to the repository. Applies to both Claude and Codex |
+| `extra_prompt` | `""` | Additional instructions appended to both review prompts, e.g. `Write the review in Japanese.` |
 
 Runs in this repository review the same way once one of the secrets is set here.
 
