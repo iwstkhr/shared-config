@@ -195,6 +195,54 @@ jobs:
 
 If the Slack API returns an error, such as `not_in_channel` or `invalid_auth`, the job fails and the error appears in the log.
 
+## AI review
+
+[.github/workflows/ai-review.yml](.github/workflows/ai-review.yml) is a reusable workflow that reviews a pull request with [Claude Code GitHub Actions](https://github.com/anthropics/claude-code-action) when the `ai-review` label is added. Claude posts a tracking comment with progress and a summary, plus inline comments on specific issues. Renovate adds the label to major updates (see [packageRules](#packagerules)), so those PRs are reviewed automatically.
+
+### AI review setup
+
+1. Install the [Claude GitHub App](https://github.com/apps/claude) on the calling repository
+2. Store one of these as a secret in the calling repository:
+   - `CLAUDE_CODE_OAUTH_TOKEN`: generated with `claude setup-token` (uses a Claude subscription)
+   - `ANTHROPIC_API_KEY`: an Anthropic API key
+3. Create the `ai-review` label in the calling repository
+
+### Calling the AI review workflow
+
+Add `.github/workflows/ai-review.yml` to each repository:
+
+```yaml
+name: "repo - AI Review"
+
+on:
+  pull_request:
+    types: [labeled]
+
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+  id-token: write
+
+jobs:
+  ai-review:
+    uses: iwstkhr/shared-config/.github/workflows/ai-review.yml@main
+    secrets:
+      CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+```
+
+- The caller must grant the permissions above, because a reusable workflow cannot exceed them
+- Adding any other label does not start a review, and pull requests from forks are skipped because they cannot read the secrets
+- Removing and adding the label again runs a new review, cancelling one still in progress
+
+| Input | Default | Description |
+| --- | --- | --- |
+| `label` | `ai-review` | Label that triggers the review |
+| `allowed_bots` | `renovate[bot]` | Comma-separated bot usernames allowed to trigger the review by adding the label. Users need write access to the repository |
+| `extra_prompt` | `""` | Additional instructions appended to the review prompt, e.g. `Write the review in Japanese.` |
+
+Runs in this repository review the same way once one of the secrets is set here.
+
 ## Renovate
 
 [renovate-preset.json](renovate-preset.json) is a shared [Renovate](https://docs.renovatebot.com/) preset. Repositories apply the common dependency update rules by extending it in their Renovate config (e.g. `renovate.json`):
@@ -234,7 +282,7 @@ Creates a lock file maintenance PR before 5:00 AM (Asia/Tokyo) every Monday and 
 
 | Condition | Behavior |
 | --- | --- |
-| Major updates | Add the `breaking-change` and `ai-review` labels alongside `dependencies` and request review from `iwstkhr` when the PR is created (no automerge) |
+| Major updates | Add the `breaking-change` and `ai-review` labels alongside `dependencies` and request review from `iwstkhr` when the PR is created (no automerge). The `ai-review` label starts the [AI review](#ai-review) |
 | Minor / patch updates | Group as `non-major dependencies` and automerge |
 | GitHub Actions pin / digest updates | Automerge |
 
