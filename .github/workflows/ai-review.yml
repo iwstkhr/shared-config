@@ -56,17 +56,36 @@ on:
 permissions: {}
 
 jobs:
+  # Adding any label starts a run, so a pull request that gets several labels at once has several runs.
+  # The review jobs in runs for other labels are skipped, but their check runs would hide the real results
+  # when they share the same names. This job decides whether to review, and the review jobs change their
+  # names in runs that do not review.
+  gate:
+    name: Check label
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      review: ${{ steps.check.outputs.review }}
+    steps:
+      - name: Check the label
+        id: check
+        # The github context belongs to the caller. Inputs are empty when this repository runs the workflow directly.
+        # Pull requests from forks are skipped because they cannot read the secrets.
+        env:
+          REVIEW: >-
+            ${{
+              github.event_name == 'pull_request'
+              && github.event.action == 'labeled'
+              && github.event.label.name == (inputs.label || 'ai-review')
+              && github.event.pull_request.head.repo.full_name == github.repository
+            }}
+        run: echo "review=$REVIEW" >> "$GITHUB_OUTPUT"
+
   claude:
-    name: Claude
-    # The github context belongs to the caller. Inputs are empty when this repository runs the workflow directly.
-    # Pull requests from forks are skipped because they cannot read the secrets.
+    name: ${{ needs.gate.outputs.review == 'true' && 'Claude' || 'Claude (not requested)' }}
+    needs: gate
     # toJSON() treats a missing input as enabled, since `null == false` is true in expressions.
-    if: >-
-      github.event_name == 'pull_request'
-      && github.event.action == 'labeled'
-      && github.event.label.name == (inputs.label || 'ai-review')
-      && github.event.pull_request.head.repo.full_name == github.repository
-      && toJSON(inputs.enable_claude) != 'false'
+    if: needs.gate.outputs.review == 'true' && toJSON(inputs.enable_claude) != 'false'
     runs-on: ubuntu-latest
     timeout-minutes: 30
     concurrency:
@@ -128,14 +147,9 @@ jobs:
             --allowedTools "mcp__github_inline_comment__create_inline_comment,Bash(gh pr comment:*),Bash(gh pr diff:*),Bash(gh pr view:*),WebFetch"
 
   codex:
-    name: Codex
-    # Same conditions as the claude job, except for the enable input
-    if: >-
-      github.event_name == 'pull_request'
-      && github.event.action == 'labeled'
-      && github.event.label.name == (inputs.label || 'ai-review')
-      && github.event.pull_request.head.repo.full_name == github.repository
-      && toJSON(inputs.enable_codex) != 'false'
+    name: ${{ needs.gate.outputs.review == 'true' && 'Codex' || 'Codex (not requested)' }}
+    needs: gate
+    if: needs.gate.outputs.review == 'true' && toJSON(inputs.enable_codex) != 'false'
     runs-on: ubuntu-latest
     timeout-minutes: 30
     concurrency:
@@ -195,8 +209,8 @@ jobs:
             ${{ inputs.extra_prompt }}
 
   codex-comment:
-    name: Codex comment
-    needs: codex
+    name: ${{ needs.gate.outputs.review == 'true' && 'Codex comment' || 'Codex comment (not requested)' }}
+    needs: [gate, codex]
     if: needs.codex.outputs.final_message != ''
     runs-on: ubuntu-latest
     timeout-minutes: 5
@@ -218,14 +232,9 @@ jobs:
             });
 
   cursor:
-    name: Cursor
-    # Same conditions as the claude job, except for the enable input
-    if: >-
-      github.event_name == 'pull_request'
-      && github.event.action == 'labeled'
-      && github.event.label.name == (inputs.label || 'ai-review')
-      && github.event.pull_request.head.repo.full_name == github.repository
-      && toJSON(inputs.enable_cursor) != 'false'
+    name: ${{ needs.gate.outputs.review == 'true' && 'Cursor' || 'Cursor (not requested)' }}
+    needs: gate
+    if: needs.gate.outputs.review == 'true' && toJSON(inputs.enable_cursor) != 'false'
     runs-on: ubuntu-latest
     timeout-minutes: 30
     concurrency:
@@ -313,8 +322,8 @@ jobs:
           } >> "$GITHUB_OUTPUT"
 
   cursor-comment:
-    name: Cursor comment
-    needs: cursor
+    name: ${{ needs.gate.outputs.review == 'true' && 'Cursor comment' || 'Cursor comment (not requested)' }}
+    needs: [gate, cursor]
     if: needs.cursor.outputs.review != ''
     runs-on: ubuntu-latest
     timeout-minutes: 5

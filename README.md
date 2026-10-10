@@ -239,6 +239,7 @@ jobs:
 - Adding any other label does not start a review, and pull requests from forks are skipped because they cannot read the secrets
 - Removing and adding the label again runs a new review, cancelling one still in progress
 - The Claude, Codex, and Cursor reviews run in parallel as the `Claude`, `Codex`, and `Cursor` jobs
+- Adding several labels at once starts one run per label. The jobs in runs for other labels are skipped with names ending in `(not requested)`, so they do not hide the review results in the pull request checks
 
 | Input | Default | Description |
 | --- | --- | --- |
