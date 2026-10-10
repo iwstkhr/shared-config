@@ -29,6 +29,15 @@
       "automerge": true
     },
     {
+      "matchManagers": ["npm"],
+      "matchUpdateTypes": ["minor"],
+      "matchCurrentVersion": "/^v?0\\./",
+      "groupName": null,
+      "addLabels": ["ai-review"],
+      "reviewers": ["iwstkhr"],
+      "automerge": false
+    },
+    {
       "matchManagers": ["github-actions"],
       "matchUpdateTypes": ["pin", "digest"],
       "automerge": true

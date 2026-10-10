@@ -197,7 +197,7 @@ If the Slack API returns an error, such as `not_in_channel` or `invalid_auth`, t
 
 ## AI review
 
-[.github/workflows/ai-review.yml](.github/workflows/ai-review.yml) is a reusable workflow that reviews a pull request with [Claude Code GitHub Actions](https://github.com/anthropics/claude-code-action), [Codex GitHub Action](https://github.com/openai/codex-action), and [Cursor CLI](https://cursor.com/docs/cli/github-actions) when the `ai-review` label is added. Claude posts a tracking comment with progress and a summary, plus inline comments on specific issues. Codex and Cursor each run in a separate job and post their review as one comment. Renovate adds the label to major updates (see [packageRules](#packagerules)), so those PRs are reviewed automatically.
+[.github/workflows/ai-review.yml](.github/workflows/ai-review.yml) is a reusable workflow that reviews a pull request with [Claude Code GitHub Actions](https://github.com/anthropics/claude-code-action), [Codex GitHub Action](https://github.com/openai/codex-action), and [Cursor CLI](https://cursor.com/docs/cli/github-actions) when the `ai-review` label is added. Claude posts a tracking comment with progress and a summary, plus inline comments on specific issues. Codex and Cursor each run in a separate job and post their review as one comment. Renovate adds the label to major updates and to minor updates of npm packages from `0.x` versions (see [packageRules](#packagerules)), so those PRs are reviewed automatically.
 
 ### AI review setup
 
@@ -292,6 +292,7 @@ Creates a lock file maintenance PR before 5:00 AM (Asia/Tokyo) every Monday and 
 | --- | --- |
 | Major updates | Add the `breaking-change` and `ai-review` labels alongside `dependencies` and request review from `iwstkhr` when the PR is created (no automerge). The `ai-review` label starts the [AI review](#ai-review) |
 | Minor / patch updates | Group as `non-major dependencies` and automerge |
+| Minor updates of npm packages from `0.x` versions | Since semver allows breaking changes in `0.x` minor releases, open a separate PR (not grouped), add the `ai-review` label alongside `dependencies`, and request review from `iwstkhr` (no automerge). The `breaking-change` label is not added because these updates are not necessarily breaking. Other managers, such as pre-commit hooks, follow the minor / patch rule above |
 | GitHub Actions pin / digest updates | Automerge |
 
 ### Validation
