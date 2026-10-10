@@ -1,4 +1,5 @@
-# Reusable workflow that reviews a pull request with Claude Code, Codex, and Cursor when the `ai-review` label is added.
+# Reusable workflow that reviews a pull request with Claude Code, Codex, and Cursor when the `ai-review` label is added,
+# and again when commits are pushed to a pull request that has the label, if the caller also triggers on `synchronize`.
 # Other repositories call it with:
 #   uses: iwstkhr/shared-config/.github/workflows/ai-review.yml@main
 # See README.md for the full caller example.
@@ -57,7 +58,8 @@ permissions: {}
 
 jobs:
   # Adding any label starts a run, so a pull request that gets several labels at once has several runs.
-  # The review jobs in runs for other labels are skipped, but their check runs would hide the real results
+  # A push to a pull request without the label also starts a run when the caller triggers on `synchronize`.
+  # The review jobs in runs that do not review are skipped, but their check runs would hide the real results
   # when they share the same names. This job decides whether to review, and the review jobs change their
   # names in runs that do not review.
   gate:
@@ -70,13 +72,16 @@ jobs:
       - name: Check the label
         id: check
         # The github context belongs to the caller. Inputs are empty when this repository runs the workflow directly.
+        # Review when the label is added, or when commits are pushed to a pull request that has the label.
         # Pull requests from forks are skipped because they cannot read the secrets.
         env:
           REVIEW: >-
             ${{
               github.event_name == 'pull_request'
-              && github.event.action == 'labeled'
-              && github.event.label.name == (inputs.label || 'ai-review')
+              && (
+                (github.event.action == 'labeled' && github.event.label.name == (inputs.label || 'ai-review'))
+                || (github.event.action == 'synchronize' && contains(github.event.pull_request.labels.*.name, inputs.label || 'ai-review'))
+              )
               && github.event.pull_request.head.repo.full_name == github.repository
             }}
         run: echo "review=$REVIEW" >> "$GITHUB_OUTPUT"

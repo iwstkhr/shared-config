@@ -197,7 +197,7 @@ If the Slack API returns an error, such as `not_in_channel` or `invalid_auth`, t
 
 ## AI review
 
-[.github/workflows/ai-review.yml](.github/workflows/ai-review.yml) is a reusable workflow that reviews a pull request with [Claude Code GitHub Actions](https://github.com/anthropics/claude-code-action), [Codex GitHub Action](https://github.com/openai/codex-action), and [Cursor CLI](https://cursor.com/docs/cli/github-actions) when the `ai-review` label is added. Claude posts a tracking comment with progress and a summary, plus inline comments on specific issues. Codex and Cursor each run in a separate job and post their review as one comment. Renovate adds the label to major updates and to minor updates of npm packages from `0.x` versions (see [packageRules](#packagerules)), so those PRs are reviewed automatically.
+[.github/workflows/ai-review.yml](.github/workflows/ai-review.yml) is a reusable workflow that reviews a pull request with [Claude Code GitHub Actions](https://github.com/anthropics/claude-code-action), [Codex GitHub Action](https://github.com/openai/codex-action), and [Cursor CLI](https://cursor.com/docs/cli/github-actions) when the `ai-review` label is added. When the caller also triggers on `synchronize`, pushing commits to a pull request that has the label runs the review again. Claude posts a tracking comment with progress and a summary, plus inline comments on specific issues. Codex and Cursor each run in a separate job and post their review as one comment. Renovate adds the label to major updates and to minor updates of npm packages from `0.x` versions (see [packageRules](#packagerules)), so those PRs are reviewed automatically.
 
 ### AI review setup
 
@@ -218,7 +218,8 @@ name: "repo - AI Review"
 
 on:
   pull_request:
-    types: [labeled]
+    # Remove synchronize to skip reviewing again on each push
+    types: [labeled, synchronize]
 
 permissions:
   contents: read
@@ -236,12 +237,14 @@ jobs:
 ```
 
 - The caller must grant the permissions above, because a reusable workflow cannot exceed them
-- Adding any other label does not start a review, and pull requests from forks are skipped because they cannot read the secrets
+- Adding any other label or pushing to a pull request without the label does not start a review, and pull requests from forks are skipped because they cannot read the secrets
 - Removing and adding the label again runs a new review, cancelling one still in progress
+- With `synchronize`, each push to a pull request that has the label runs all reviews again, cancelling ones still in progress. Renovate rebases count as pushes
+- Each review run posts a new Claude tracking comment and new Codex and Cursor comments, so reviewing on push adds cost and comments. Remove `synchronize` if you do not need it
 - The Claude, Codex, and Cursor reviews run in parallel as the `Claude`, `Codex`, and `Cursor` jobs
 - The Codex and Cursor jobs get a read-only token, and separate `Codex comment` and `Cursor comment` jobs post their reviews. The agents read untrusted pull request content, and the Cursor CLI comes from an unpinned installer, so a prompt injection or a compromised installer cannot write to the repository
 - The Claude job needs write permissions because claude-code-action posts its comments itself. Its tools are limited to reading the pull request, fetching web pages (for release notes), and commenting on the pull request
-- Adding several labels at once starts one run per label. The jobs in runs for other labels are skipped with names ending in `(not requested)`, so they do not hide the review results in the pull request checks
+- Adding several labels at once starts one run per label, and pushing to a pull request without the label also starts a run. The jobs in runs that do not review are skipped with names ending in `(not requested)`, so they do not hide the review results in the pull request checks
 
 | Input | Default | Description |
 | --- | --- | --- |
