@@ -239,6 +239,8 @@ jobs:
 - Adding any other label does not start a review, and pull requests from forks are skipped because they cannot read the secrets
 - Removing and adding the label again runs a new review, cancelling one still in progress
 - The Claude, Codex, and Cursor reviews run in parallel as the `Claude`, `Codex`, and `Cursor` jobs
+- The Codex and Cursor jobs get a read-only token, and separate `Codex comment` and `Cursor comment` jobs post their reviews. The agents read untrusted pull request content, and the Cursor CLI comes from an unpinned installer, so a prompt injection or a compromised installer cannot write to the repository
+- The Claude job needs write permissions because claude-code-action posts its comments itself. Its tools are limited to reading the pull request, fetching web pages (for release notes), and commenting on the pull request
 - Adding several labels at once starts one run per label. The jobs in runs for other labels are skipped with names ending in `(not requested)`, so they do not hide the review results in the pull request checks
 
 | Input | Default | Description |

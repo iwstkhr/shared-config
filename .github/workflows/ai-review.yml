@@ -143,6 +143,8 @@ jobs:
             Do not comment on style issues that linters already catch.
 
             ${{ inputs.extra_prompt }}
+          # claude-code-action posts comments itself, so this job needs write permissions.
+          # Limit the tools instead, so a prompt injection cannot do more than read the PR, fetch web pages, and comment on it.
           claude_args: |
             --allowedTools "mcp__github_inline_comment__create_inline_comment,Bash(gh pr comment:*),Bash(gh pr diff:*),Bash(gh pr view:*),WebFetch"
 
@@ -156,6 +158,7 @@ jobs:
       group: ai-review-codex-${{ github.repository }}-${{ github.event.pull_request.number }}
       cancel-in-progress: true
     # Codex gets a read-only token. The codex-comment job posts its result.
+    # Codex reads untrusted pull request content, so a prompt injection cannot use the token to write to the repository.
     permissions:
       contents: read
     outputs:
@@ -220,6 +223,7 @@ jobs:
     steps:
       - name: Post the Codex review
         uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        # Pass the review through an environment variable so its content is never run as script code
         env:
           REVIEW: ${{ needs.codex.outputs.final_message }}
         with:
@@ -241,6 +245,8 @@ jobs:
       group: ai-review-cursor-${{ github.repository }}-${{ github.event.pull_request.number }}
       cancel-in-progress: true
     # Cursor gets a read-only token. The cursor-comment job posts its result.
+    # Cursor reads untrusted pull request content and its CLI comes from an unpinned installer,
+    # so neither can use the token to write to the repository.
     permissions:
       contents: read
     outputs:
@@ -333,6 +339,7 @@ jobs:
     steps:
       - name: Post the Cursor review
         uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        # Pass the review through an environment variable so its content is never run as script code
         env:
           REVIEW: ${{ needs.cursor.outputs.review }}
         with:
