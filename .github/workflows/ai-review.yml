@@ -296,8 +296,15 @@ jobs:
             Do not comment on style issues that linters already catch.
 
             ${{ inputs.extra_prompt }}
+        # The json output joins every assistant message, including progress notes between tool calls,
+        # without separators, which breaks Markdown headings. Keep only the messages after the last tool call.
         run: |
-          review=$(agent -p --trust --mode ask --output-format json "$PROMPT" | jq -r '.result')
+          review=$(agent -p --trust --mode ask --output-format stream-json "$PROMPT" | jq -rs '
+            (map(.type == "tool_call") | rindex(true) // -1) as $last
+            | .[$last + 1:]
+            | map(select(.type == "assistant") | .message.content[]? | select(.type == "text") | .text)
+            | join("")
+          ')
           delimiter="EOF_$(openssl rand -hex 8)"
           {
             echo "review<<$delimiter"
