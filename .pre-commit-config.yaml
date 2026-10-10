@@ -54,7 +54,7 @@ repos:
 
   # Scan dependencies for vulnerabilities and IaC for misconfigurations (requires Docker)
   - repo: https://github.com/mxab/pre-commit-trivy
-    rev: db55d941954f2342c6355b6b9fba61f9ce6583e0 # frozen: v0.73.0
+    rev: c7ab3e143851b66a066ad0be56ded1a322a66d40 # frozen: 0.74.0
     hooks:
       - id: trivyfs-docker
         # Secret scanning is left to gitleaks; the last arg is the path to scan
@@ -79,13 +79,13 @@ repos:
   ##########################################################
   # Lint JavaScript and TypeScript files with Biome
   - repo: https://github.com/biomejs/pre-commit
-    rev: 742ab683a70977bd4648797d799ddd6b5496ae87 # frozen: v2.5.13
+    rev: 5090c1e080cc8cec15feee68a9355c0f660d3712 # frozen: v2.5.15
     hooks:
       - id: biome-check
 
   # Lint and format Python files with Ruff
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: 2eeb5678de71a00c0902cbda7105d328432f72cb # frozen: v0.16.8
+    rev: f12be1ebaa5351c1fc76472de98db2c3446c8253 # frozen: v0.16.10
     hooks:
       - id: ruff-check
         # --extend-select S adds the flake8-bandit security rules on top of the repository's Ruff config
