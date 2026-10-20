@@ -38,6 +38,7 @@ jobs:
         uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
           # semgrep fails on Python 3.15; return to 3.x once it supports 3.15
+          # (and drop the matching allowedVersions rule in renovate-preset.json)
           python-version: "3.14"
 
       # Repositories with mise.toml get the tools it pins, which hooks may rely on
