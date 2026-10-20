@@ -44,7 +44,7 @@ jobs:
       # Repositories with mise.toml get the tools it pins, which hooks may rely on
       - name: Setup mise
         if: hashFiles('mise.toml') != ''
-        uses: jdx/mise-action@2d8d4cafcbd33be2ea37d2b6f5ad595363d1f1ca # v5.1.1
+        uses: jdx/mise-action@08ae2a091c038e1e05ec6f5115dc5c69d5a2a6b8 # v5.1.2
         with:
           # Match minimumReleaseAge in the Renovate preset
           minimum_release_age: 7d
@@ -54,7 +54,7 @@ jobs:
         env:
           # Keep in sync with mise.toml; Renovate updates both
           # renovate: datasource=pypi depName=pre-commit
-          PRE_COMMIT_VERSION: 4.6.2
+          PRE_COMMIT_VERSION: 4.7.0
         run: |
           if command -v mise >/dev/null && mise which pre-commit >/dev/null 2>&1; then
             echo "Using pre-commit from mise.toml"
