@@ -300,6 +300,7 @@ Creates a lock file maintenance PR before 5:00 AM (Asia/Tokyo) every Monday and 
 | Minor / patch updates | Group as `non-major dependencies` and automerge |
 | Minor updates of npm packages from `0.x` versions | Since semver allows breaking changes in `0.x` minor releases, open a separate PR (not grouped), add the `ai-review` label alongside `dependencies`, and request review from `iwstkhr` (no automerge). The `breaking-change` label is not added because these updates are not necessarily breaking. Other managers, such as pre-commit hooks, follow the minor / patch rule above |
 | GitHub Actions pin / digest updates | Automerge |
+| Python versions in GitHub Actions (`python-version`) | Keep below 3.15 (`allowedVersions: "<3.15"`), because semgrep fails on Python 3.15. Remove the rule once semgrep supports 3.15 |
 
 ### Validation
 
