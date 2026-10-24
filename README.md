@@ -4,7 +4,7 @@ Configuration templates shared across personal repositories.
 
 ## pre-commit
 
-[mise.toml](mise.toml) pins the pre-commit and shellcheck versions for this repository. With mise installed, set up the tools and Git hooks:
+[mise.toml](mise.toml) pins the pre-commit, shellcheck, and Trivy versions for this repository. With mise installed, set up the tools and Git hooks:
 
 ```bash
 mise install
@@ -33,7 +33,7 @@ After copying, Renovate (`:enablePreCommit`) keeps each repository's `rev` value
 | biome-check | JavaScript / TypeScript |
 | gitleaks | Secret detection |
 | semgrep | Static analysis for security issues and bugs |
-| trivyfs-docker | Dependency vulnerabilities and IaC misconfigurations (Trivy) |
+| trivy | Dependency vulnerabilities and IaC misconfigurations (Trivy) |
 | markdownlint-cli2 | Markdown |
 | shellcheck | Shell scripts |
 | conventional-pre-commit | Commit messages (`commit-msg` stage) |
@@ -87,19 +87,21 @@ Useful changes per repository:
 
 ### Trivy
 
-`trivyfs-docker` from [mxab/pre-commit-trivy](https://github.com/mxab/pre-commit-trivy) runs [Trivy](https://trivy.dev/) in the `aquasec/trivy` Docker image and fails the commit on any HIGH or CRITICAL finding. Some details to keep in mind:
+The `trivy` hook is a `local` hook with `language: system`, like [shellcheck](#shellcheck), so it runs `trivy fs` with the [Trivy](https://trivy.dev/) found on `PATH` and fails the commit on any HIGH or CRITICAL finding. Repositories need Trivy installed, for example by pinning it in their `mise.toml`:
 
-- Docker must be running locally. GitHub-hosted Ubuntu runners have it preinstalled
-- The hook scans the whole repository rather than the staged files, so it runs on every commit
-- The vulnerability database is downloaded on the first run and when it goes stale, so the hook needs network access
-- The cache is written to `.pre-commit-trivy-cache` in the repository. Add it to `.gitignore`
+```toml
+[tools]
+trivy = "0.76.1"
+```
+
+GitHub-hosted runners do not have Trivy preinstalled, so repositories that call the [CI workflow](#github-actions) must pin it in `mise.toml`. Renovate does not update `local` hooks, so the version is managed only in `mise.toml`. Some details to keep in mind:
+
+- The hook scans the whole repository rather than the staged files, so it runs once on every commit
+- The vulnerability database is downloaded on the first run and when it goes stale, so the hook needs network access. It is cached in Trivy's default cache directory (`~/.cache/trivy`), outside the repository
+- `--exit-code 1` makes findings fail the commit, since `trivy fs` exits with 0 by default
 - `--scanners vuln,misconfig` skips Trivy's secret scanner, since gitleaks already covers secrets
 - Trivy does not read `.gitignore`, so `--skip-dirs "**/node_modules"` and `--skip-dirs "**/.venv"` keep it out of installed dependencies at any depth. Lockfiles and `requirements.txt` are still scanned
-- `args` replace the hook's default args, and the last one must be the path to scan (`.`)
-
-```bash
-echo ".pre-commit-trivy-cache/" >> .gitignore
-```
+- The last arg must be the path to scan (`.`)
 
 Useful changes per repository:
 

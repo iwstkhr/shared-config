@@ -22,8 +22,7 @@ permissions:
 
 jobs:
   pre-commit:
-    # Not ubuntu-slim: it has no Docker daemon, which the docker_image hook (Trivy) needs
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-slim
     timeout-minutes: 15
     outputs:
       # Job-level if conditions cannot read secrets, so expose only whether Slack is configured

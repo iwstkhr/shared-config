@@ -52,30 +52,32 @@ repos:
         # --error makes findings fail the commit; the ruleset is fetched from the Semgrep Registry on each run
         args: [--config, p/default, --error, --skip-unknown-extensions, --disable-version-check, --quiet]
 
-  # Scan dependencies for vulnerabilities and IaC for misconfigurations (requires Docker)
-  - repo: https://github.com/mxab/pre-commit-trivy
-    rev: c7ab3e143851b66a066ad0be56ded1a322a66d40 # frozen: 0.74.0
-    hooks:
-      - id: trivyfs-docker
-        # Secret scanning is left to gitleaks; the last arg is the path to scan
-        # The cache is written to .pre-commit-trivy-cache, so add it to .gitignore
-        # Trivy ignores .gitignore, so skip installed dependencies explicitly
-        args: [--scanners, "vuln,misconfig", --severity, "HIGH,CRITICAL", --skip-dirs, "**/node_modules", --skip-dirs, "**/.venv", --quiet, .]
-
   # Lint Markdown
   - repo: https://github.com/DavidAnson/markdownlint-cli2
     rev: 916ad0aaa108c64d294101002066f530ea170b10 # frozen: v0.23.3
     hooks:
       - id: markdownlint-cli2
 
-  # Lint shell scripts with the local shellcheck, such as the one pinned in mise.toml
+  # Run local tools, such as the ones pinned in mise.toml
   - repo: local
     hooks:
+      # Lint shell scripts
       - id: shellcheck
         name: shellcheck
         entry: shellcheck
         language: system
         types: [shell]
+      # Scan dependencies for vulnerabilities and IaC for misconfigurations
+      - id: trivy
+        name: trivy
+        entry: trivy fs
+        language: system
+        # Trivy scans the whole repository, so run once per commit instead of per file
+        pass_filenames: false
+        always_run: true
+        # Secret scanning is left to gitleaks; the last arg is the path to scan
+        # Trivy ignores .gitignore, so skip installed dependencies explicitly
+        args: [--exit-code, "1", --scanners, "vuln,misconfig", --severity, "HIGH,CRITICAL", --skip-dirs, "**/node_modules", --skip-dirs, "**/.venv", --quiet, .]
 
   ##########################################################
   # Language configs
