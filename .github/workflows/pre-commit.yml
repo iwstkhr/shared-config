@@ -63,15 +63,21 @@ jobs:
           fi
           pre-commit --version
 
-      # Hook environments are rebuilt only when the config, mise.toml, or Python changes
+      # When the config or mise.toml changes, restore the previous environments so that only the changed hooks are reinstalled
       - name: Cache pre-commit environments
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ~/.cache/pre-commit
           key: pre-commit-${{ runner.os }}-${{ steps.setup-python.outputs.python-version }}-${{ hashFiles('.pre-commit-config.yaml', 'mise.toml') }}
+          restore-keys: |
+            pre-commit-${{ runner.os }}-${{ steps.setup-python.outputs.python-version }}-
 
       - name: Run pre-commit
         run: pre-commit run --all-files --show-diff-on-failure --color=always
+
+      # Drop environments of hook versions no longer in the config so the restored cache does not keep growing
+      - name: Remove unused pre-commit environments
+        run: pre-commit gc
 
   notify:
     name: Notify
