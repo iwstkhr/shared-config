@@ -68,11 +68,14 @@ repos:
     hooks:
       - id: markdownlint-cli2
 
-  # Lint shell scripts
-  - repo: https://github.com/koalaman/shellcheck-precommit
-    rev: 99470f5e12208ff0fb17ab81c3c494f7620a1d8d # frozen: v0.11.0
+  # Lint shell scripts with the local shellcheck, such as the one pinned in mise.toml
+  - repo: local
     hooks:
       - id: shellcheck
+        name: shellcheck
+        entry: shellcheck
+        language: system
+        types: [shell]
 
   ##########################################################
   # Language configs

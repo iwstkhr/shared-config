@@ -4,7 +4,7 @@ Configuration templates shared across personal repositories.
 
 ## pre-commit
 
-[mise.toml](mise.toml) pins the pre-commit version for this repository. With mise installed, set up the tools and Git hooks:
+[mise.toml](mise.toml) pins the pre-commit and shellcheck versions for this repository. With mise installed, set up the tools and Git hooks:
 
 ```bash
 mise install
@@ -39,6 +39,17 @@ After copying, Renovate (`:enablePreCommit`) keeps each repository's `rev` value
 | conventional-pre-commit | Commit messages (`commit-msg` stage) |
 
 Hooks with no matching files are skipped, so unused hooks can stay in place.
+
+### shellcheck
+
+The `shellcheck` hook is a `local` hook with `language: system`, so it runs the `shellcheck` found on `PATH` instead of downloading its own. Repositories with shell scripts need shellcheck installed, for example by pinning it in their `mise.toml`:
+
+```toml
+[tools]
+shellcheck = "0.11.0"
+```
+
+The [CI workflow](#github-actions) installs the tools in `mise.toml`, so the same version runs there. Renovate does not update `local` hooks, so the version is managed only in `mise.toml`.
 
 ### Conventional Commits
 
