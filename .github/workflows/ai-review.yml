@@ -64,7 +64,7 @@ jobs:
   # names in runs that do not review.
   gate:
     name: Check label
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-slim
     timeout-minutes: 5
     outputs:
       review: ${{ steps.check.outputs.review }}
@@ -91,6 +91,7 @@ jobs:
     needs: gate
     # toJSON() treats a missing input as enabled, since `null == false` is true in expressions.
     if: needs.gate.outputs.review == 'true' && toJSON(inputs.enable_claude) != 'false'
+    # Not ubuntu-slim: agent runs can exceed its 15-minute job limit
     runs-on: ubuntu-latest
     timeout-minutes: 30
     concurrency:
@@ -157,6 +158,7 @@ jobs:
     name: ${{ needs.gate.outputs.review == 'true' && 'Codex' || 'Codex (not requested)' }}
     needs: gate
     if: needs.gate.outputs.review == 'true' && toJSON(inputs.enable_codex) != 'false'
+    # Not ubuntu-slim: agent runs can exceed its 15-minute job limit
     runs-on: ubuntu-latest
     timeout-minutes: 30
     concurrency:
@@ -220,7 +222,7 @@ jobs:
     name: ${{ needs.gate.outputs.review == 'true' && 'Codex comment' || 'Codex comment (not requested)' }}
     needs: [gate, codex]
     if: needs.codex.outputs.final_message != ''
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-slim
     timeout-minutes: 5
     permissions:
       issues: write
@@ -244,6 +246,7 @@ jobs:
     name: ${{ needs.gate.outputs.review == 'true' && 'Cursor' || 'Cursor (not requested)' }}
     needs: gate
     if: needs.gate.outputs.review == 'true' && toJSON(inputs.enable_cursor) != 'false'
+    # Not ubuntu-slim: agent runs can exceed its 15-minute job limit
     runs-on: ubuntu-latest
     timeout-minutes: 30
     concurrency:
@@ -336,7 +339,7 @@ jobs:
     name: ${{ needs.gate.outputs.review == 'true' && 'Cursor comment' || 'Cursor comment (not requested)' }}
     needs: [gate, cursor]
     if: needs.cursor.outputs.review != ''
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-slim
     timeout-minutes: 5
     permissions:
       issues: write

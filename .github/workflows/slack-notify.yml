@@ -29,7 +29,7 @@ permissions: {}
 jobs:
   notify:
     name: Notify
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-slim
     timeout-minutes: 5
     steps:
       # The github context here belongs to the caller, so the message points to the caller's run.

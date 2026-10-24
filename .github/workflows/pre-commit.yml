@@ -22,6 +22,7 @@ permissions:
 
 jobs:
   pre-commit:
+    # Not ubuntu-slim: it has no Docker daemon, which the docker_image hooks (Trivy, ShellCheck) need
     runs-on: ubuntu-latest
     timeout-minutes: 15
     outputs:
