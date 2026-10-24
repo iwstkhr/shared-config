@@ -27,17 +27,17 @@ on:
         description: Review with Claude Code. The review is also skipped when neither CLAUDE_CODE_OAUTH_TOKEN nor ANTHROPIC_API_KEY is set
         type: boolean
         required: false
-        default: true
+        default: false
       enable_codex:
         description: Review with Codex. The review is also skipped when OPENAI_API_KEY is not set
         type: boolean
         required: false
-        default: true
+        default: false
       enable_cursor:
         description: Review with Cursor. The review is also skipped when CURSOR_API_KEY is not set
         type: boolean
         required: false
-        default: true
+        default: false
     secrets:
       CLAUDE_CODE_OAUTH_TOKEN:
         description: Claude Code OAuth token from `claude setup-token`. Set this or ANTHROPIC_API_KEY

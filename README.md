@@ -230,12 +230,18 @@ permissions:
 jobs:
   ai-review:
     uses: iwstkhr/shared-config/.github/workflows/ai-review.yml@main
+    # Every review is off by default. Enable the ones to run
+    with:
+      enable_claude: true
+      enable_codex: true
+      enable_cursor: true
     secrets:
       CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
       OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
       CURSOR_API_KEY: ${{ secrets.CURSOR_API_KEY }}
 ```
 
+- The Claude, Codex, and Cursor reviews are off by default. Set `enable_claude`, `enable_codex`, or `enable_cursor` to `true` to run each one
 - The caller must grant the permissions above, because a reusable workflow cannot exceed them
 - Adding any other label or pushing to a pull request without the label does not start a review, and pull requests from forks are skipped because they cannot read the secrets
 - Removing and adding the label again runs a new review, cancelling one still in progress
@@ -250,9 +256,9 @@ jobs:
 | --- | --- | --- |
 | `label` | `ai-review` | Label that triggers the review |
 | `allowed_bots` | `renovate[bot]` | Comma-separated bot usernames allowed to trigger the review by adding the label. Users need write access to the repository. Applies to Claude and Codex. The Cursor review runs regardless of who added the label |
-| `enable_claude` | `true` | Review with Claude Code. The review is also skipped when neither `CLAUDE_CODE_OAUTH_TOKEN` nor `ANTHROPIC_API_KEY` is set |
-| `enable_codex` | `true` | Review with Codex. The review is also skipped when `OPENAI_API_KEY` is not set |
-| `enable_cursor` | `true` | Review with Cursor. The review is also skipped when `CURSOR_API_KEY` is not set |
+| `enable_claude` | `false` | Review with Claude Code. The review is also skipped when neither `CLAUDE_CODE_OAUTH_TOKEN` nor `ANTHROPIC_API_KEY` is set |
+| `enable_codex` | `false` | Review with Codex. The review is also skipped when `OPENAI_API_KEY` is not set |
+| `enable_cursor` | `false` | Review with Cursor. The review is also skipped when `CURSOR_API_KEY` is not set |
 | `extra_prompt` | `""` | Additional instructions appended to all review prompts, e.g. `Write the review in Japanese.` |
 
 Runs in this repository review the same way once one of the secrets is set here.
