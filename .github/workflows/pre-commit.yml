@@ -64,6 +64,7 @@ jobs:
           pre-commit --version
 
       # When the config or mise.toml changes, restore the previous environments so that only the changed hooks are reinstalled
+      # After a Python patch update, fall back to a cache from the previous version; pre-commit reinstalls only the broken Python environments
       - name: Cache pre-commit environments
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
@@ -71,6 +72,7 @@ jobs:
           key: pre-commit-${{ runner.os }}-${{ steps.setup-python.outputs.python-version }}-${{ hashFiles('.pre-commit-config.yaml', 'mise.toml') }}
           restore-keys: |
             pre-commit-${{ runner.os }}-${{ steps.setup-python.outputs.python-version }}-
+            pre-commit-${{ runner.os }}-
 
       - name: Run pre-commit
         run: pre-commit run --all-files --show-diff-on-failure --color=always
