@@ -4,7 +4,7 @@ Configuration templates shared across personal repositories.
 
 ## pre-commit
 
-[mise.toml](mise.toml) pins the pre-commit, shellcheck, and Trivy versions for this repository. With mise installed, set up the tools and Git hooks:
+[mise.toml](mise.toml) pins the pre-commit, actionlint, gitleaks, shellcheck, and Trivy versions for this repository. With mise installed, set up the tools and Git hooks:
 
 ```bash
 mise install
@@ -40,16 +40,20 @@ After copying, Renovate (`:enablePreCommit`) keeps each repository's `rev` value
 
 Hooks with no matching files are skipped, so unused hooks can stay in place.
 
-### shellcheck
+### Local tools
 
-The `shellcheck` hook is a `local` hook with `language: system`, so it runs the `shellcheck` found on `PATH` instead of downloading its own. Repositories with shell scripts need shellcheck installed, for example by pinning it in their `mise.toml`:
+The `actionlint`, `gitleaks`, `shellcheck`, and [`trivy`](#trivy) hooks are `local` hooks with `language: system`, so they run the tools found on `PATH` instead of downloading their own. Repositories need the tools for the hooks that match their files installed, for example by pinning them in their `mise.toml`:
 
 ```toml
 [tools]
+actionlint = "1.7.12"
+gitleaks = "8.30.1"
 shellcheck = "0.11.0"
 ```
 
-The [CI workflow](#github-actions) installs the tools in `mise.toml`, so the same version runs there. Renovate does not update `local` hooks, so the version is managed only in `mise.toml`.
+`gitleaks` runs on every commit, so every repository needs it. `actionlint` and `shellcheck` are needed only in repositories with workflows or shell scripts. The [CI workflow](#github-actions) installs the tools in `mise.toml`, so the same versions run there. Renovate does not update `local` hooks, so the versions are managed only in `mise.toml`.
+
+`gitleaks` scans only the staged changes (`--staged`), so it finds nothing in `pre-commit run --all-files`, including the CI workflow. Run `gitleaks git` to scan the whole history.
 
 ### Conventional Commits
 
@@ -87,7 +91,7 @@ Useful changes per repository:
 
 ### Trivy
 
-The `trivy` hook is a `local` hook with `language: system`, like [shellcheck](#shellcheck), so it runs `trivy fs` with the [Trivy](https://trivy.dev/) found on `PATH` and fails the commit on any HIGH or CRITICAL finding. Repositories need Trivy installed, for example by pinning it in their `mise.toml`:
+The `trivy` hook is a `local` hook with `language: system`, like the other [local tools](#local-tools), so it runs `trivy fs` with the [Trivy](https://trivy.dev/) found on `PATH` and fails the commit on any HIGH or CRITICAL finding. Repositories need Trivy installed, for example by pinning it in their `mise.toml`:
 
 ```toml
 [tools]

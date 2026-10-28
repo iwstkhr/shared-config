@@ -1,4 +1,6 @@
 [tools]
 pre-commit = "4.7.0"
+actionlint = "1.7.12"
+gitleaks = "8.30.1"
 shellcheck = "0.11.0"
 trivy = "0.76.1"
