@@ -33,7 +33,7 @@ repos:
 
   # Static analysis for security issues and bugs
   - repo: https://github.com/semgrep/pre-commit
-    rev: 51a77ed8e8899262edd0674395baba66cc64b0aa # frozen: v1.182.0
+    rev: dfdeebdd309a043859ba33a555839911e7b11801 # frozen: v1.182.1
     hooks:
       - id: semgrep
         # args replace the hook defaults, so keep --skip-unknown-extensions and the others here
@@ -85,7 +85,7 @@ repos:
   ##########################################################
   # Lint JavaScript and TypeScript files with Biome
   - repo: https://github.com/biomejs/pre-commit
-    rev: 5090c1e080cc8cec15feee68a9355c0f660d3712 # frozen: v2.5.15
+    rev: e5f293b7668ac8bfeb2c4bc6740affc40b4f51e1 # frozen: v2.6.2
     hooks:
       - id: biome-check
 
