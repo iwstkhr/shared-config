@@ -256,6 +256,74 @@ jobs:
 
 If the Slack API returns an error, such as `not_in_channel` or `invalid_auth`, the job fails and the error appears in the log.
 
+## AI review
+
+[.github/workflows/ai-review.yml](.github/workflows/ai-review.yml) is a reusable workflow that reviews a pull request with [Claude Code GitHub Actions](https://github.com/anthropics/claude-code-action), [Codex GitHub Action](https://github.com/openai/codex-action), and [Cursor CLI](https://cursor.com/docs/cli/github-actions) when the `ai-review` label is added. When the caller also triggers on `synchronize`, pushing commits to a pull request that has the label runs the review again. Claude posts a tracking comment with progress and a summary, plus inline comments on specific issues. Codex and Cursor each run in a separate job and post their review as one comment. Renovate adds the label to major updates and to minor updates of npm packages from `0.x` versions (see [packageRules](#packagerules)), so those PRs are reviewed automatically.
+
+### AI review setup
+
+1. Install the [Claude GitHub App](https://github.com/apps/claude) on the calling repository
+2. Store one of these as a secret in the calling repository to enable the Claude review. Without either, the Claude review is skipped:
+   - `CLAUDE_CODE_OAUTH_TOKEN`: generated with `claude setup-token` (uses a Claude subscription)
+   - `ANTHROPIC_API_KEY`: an Anthropic API key
+3. Optionally store `OPENAI_API_KEY` (an OpenAI API key) as a secret to enable the Codex review. Without it, the Codex review is skipped
+4. Optionally store `CURSOR_API_KEY` (an API key from the Cursor dashboard) as a secret to enable the Cursor review. Without it, the Cursor review is skipped
+5. Create the `ai-review` label in the calling repository
+
+### Calling the AI review workflow
+
+Add `.github/workflows/ai-review.yml` to each repository:
+
+```yaml
+name: "repo - AI Review"
+
+on:
+  pull_request:
+    # Remove synchronize to skip reviewing again on each push
+    types: [labeled, synchronize]
+
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+  id-token: write
+
+jobs:
+  ai-review:
+    uses: iwstkhr/shared-config/.github/workflows/ai-review.yml@main
+    # Every review is off by default. Enable the ones to run
+    with:
+      enable_claude: true
+      enable_codex: true
+      enable_cursor: true
+    secrets:
+      CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      CURSOR_API_KEY: ${{ secrets.CURSOR_API_KEY }}
+```
+
+- The Claude, Codex, and Cursor reviews are off by default. Set `enable_claude`, `enable_codex`, or `enable_cursor` to `true` to run each one
+- The caller must grant the permissions above, because a reusable workflow cannot exceed them
+- Adding any other label or pushing to a pull request without the label does not start a review, and pull requests from forks are skipped because they cannot read the secrets
+- Removing and adding the label again runs a new review, cancelling one still in progress
+- With `synchronize`, each push to a pull request that has the label runs all reviews again, cancelling ones still in progress. Renovate rebases count as pushes
+- Each review run posts a new Claude tracking comment and new Codex and Cursor comments, so reviewing on push adds cost and comments. Remove `synchronize` if you do not need it
+- The Claude, Codex, and Cursor reviews run in parallel as the `Claude`, `Codex`, and `Cursor` jobs
+- The Codex and Cursor jobs get a read-only token, and separate `Codex comment` and `Cursor comment` jobs post their reviews. The agents read untrusted pull request content, and the Cursor CLI comes from an unpinned installer, so a prompt injection or a compromised installer cannot write to the repository
+- The Claude job needs write permissions because claude-code-action posts its comments itself. Its tools are limited to reading the pull request, fetching web pages (for release notes), and commenting on the pull request
+- Adding several labels at once starts one run per label, and pushing to a pull request without the label also starts a run. The jobs in runs that do not review are skipped with names ending in `(not requested)`, so they do not hide the review results in the pull request checks
+
+| Input | Default | Description |
+| --- | --- | --- |
+| `label` | `ai-review` | Label that triggers the review |
+| `allowed_bots` | `renovate[bot]` | Comma-separated bot usernames allowed to trigger the review by adding the label. Users need write access to the repository. Applies to Claude and Codex. The Cursor review runs regardless of who added the label |
+| `enable_claude` | `false` | Review with Claude Code. The review is also skipped when neither `CLAUDE_CODE_OAUTH_TOKEN` nor `ANTHROPIC_API_KEY` is set |
+| `enable_codex` | `false` | Review with Codex. The review is also skipped when `OPENAI_API_KEY` is not set |
+| `enable_cursor` | `false` | Review with Cursor. The review is also skipped when `CURSOR_API_KEY` is not set |
+| `extra_prompt` | `""` | Additional instructions appended to all review prompts, e.g. `Write the review in Japanese.` |
+
+Runs in this repository review the same way once one of the secrets is set here.
+
 ## Renovate
 
 [renovate-preset.json](renovate-preset.json) is a shared [Renovate](https://docs.renovatebot.com/) preset. Repositories apply the common dependency update rules by extending it in their Renovate config (e.g. `renovate.json`):
@@ -294,8 +362,9 @@ Creates a lock file maintenance PR before 5:00 AM (Asia/Tokyo) every Monday and 
 
 | Condition | Behavior |
 | --- | --- |
-| Major updates | Add the `breaking-change` label alongside `dependencies` and request review from `iwstkhr` when the PR is created (no automerge) |
+| Major updates | Add the `breaking-change` and `ai-review` labels alongside `dependencies` and request review from `iwstkhr` when the PR is created (no automerge). The `ai-review` label starts the [AI review](#ai-review) |
 | Minor / patch updates | Group as `non-major dependencies` and automerge |
+| Minor updates of npm packages from `0.x` versions | Since semver allows breaking changes in `0.x` minor releases, open a separate PR (not grouped), add the `ai-review` label alongside `dependencies`, and request review from `iwstkhr` (no automerge). The `breaking-change` label is not added because these updates are not necessarily breaking. Other managers, such as mise, follow the minor / patch rule above |
 | GitHub Actions pin / digest updates | Automerge |
 | Python version in `mise.toml` | Keep below 3.15 (`allowedVersions: "<3.15"`), because semgrep fails on Python 3.15. Remove the rule once semgrep supports 3.15 |
 

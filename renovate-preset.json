@@ -19,13 +19,22 @@
   "packageRules": [
     {
       "matchUpdateTypes": ["major"],
-      "addLabels": ["breaking-change"],
+      "addLabels": ["breaking-change", "ai-review"],
       "reviewers": ["iwstkhr"]
     },
     {
       "matchUpdateTypes": ["minor", "patch"],
       "groupName": "non-major dependencies",
       "automerge": true
+    },
+    {
+      "matchManagers": ["npm"],
+      "matchUpdateTypes": ["minor"],
+      "matchCurrentVersion": "/^v?0\\./",
+      "groupName": null,
+      "addLabels": ["ai-review"],
+      "reviewers": ["iwstkhr"],
+      "automerge": false
     },
     {
       "matchManagers": ["github-actions"],
