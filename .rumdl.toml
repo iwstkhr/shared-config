@@ -1,0 +1,5 @@
+# rumdl respects .gitignore by default, so .venv and node_modules are skipped
+[global]
+# Disable MD013 (line length): Japanese text often exceeds 80 columns when wrapped.
+# Disable MD029 (ordered list item prefix): we number lists as 1. 2. 3. throughout.
+disable = ["MD013", "MD029"]

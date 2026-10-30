@@ -1,0 +1,18 @@
+# Shared yamllint config for all repositories, close in strictness to the former check-yaml hook.
+# Copy it into each repository; see README.md.
+extends: default
+
+rules:
+  # Whitespace and final newlines are left to editorconfig-checker
+  trailing-spaces: disable
+  new-line-at-end-of-file: disable
+  # Style rules that the former check-yaml hook did not enforce
+  document-start: disable
+  line-length: disable
+  comments: disable
+  comments-indentation: disable
+  indentation:
+    indent-sequences: whatever
+  # GitHub Actions uses "on:" as a key
+  truthy:
+    check-keys: false

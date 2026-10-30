@@ -1,0 +1,11 @@
+# Shared EditorConfig for all repositories, checked by editorconfig-checker on commit.
+# Copy it into each repository; see README.md.
+root = true
+
+[*]
+insert_final_newline = true
+trim_trailing_whitespace = true
+
+[*.svg]
+insert_final_newline = unset
+trim_trailing_whitespace = unset

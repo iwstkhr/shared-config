@@ -1,0 +1,81 @@
+# Shared lefthook config for all repositories.
+# Other repositories load it through remotes in their lefthook.yml; see README.md.
+# Every job runs a tool found on PATH, such as the ones pinned in mise.toml.
+# Jobs with a glob and no matching staged files are skipped, so unused jobs can stay in place.
+# Override a job by name in lefthook-local.yml, for example to exclude generated files.
+
+pre-commit:
+  # Fail when a job modifies files, so the fixes can be reviewed and staged before committing again
+  fail_on_changes: always
+  jobs:
+    # Checks that only report problems run in parallel, which overlaps the network-bound semgrep and trivy
+    # To override one of them in lefthook-local.yml, nest it under the checks group; see README.md
+    - name: checks
+      group:
+        parallel: true
+        jobs:
+          # Check final newlines and trailing whitespace against .editorconfig
+          - name: editorconfig-checker
+            run: editorconfig-checker {staged_files}
+            exclude: "*.svg"
+
+          # Check YAML syntax and style against .yamllint.yml
+          - name: yamllint
+            run: yamllint --strict {staged_files}
+            glob: "*.{yml,yaml}"
+
+          # Lint GitHub Actions workflows
+          - name: actionlint
+            run: actionlint {staged_files}
+            glob: ".github/workflows/*.{yml,yaml}"
+
+          # Detect secrets such as API keys and tokens in the staged changes
+          - name: gitleaks
+            run: gitleaks git --pre-commit --redact --staged --verbose
+
+          # Static analysis for security issues and bugs
+          # --error makes findings fail the commit; the ruleset is fetched from the Semgrep Registry on each run
+          - name: semgrep
+            run: semgrep --config p/default --error --skip-unknown-extensions --disable-version-check --quiet {staged_files}
+
+          # Lint shell scripts, detected by extension or shebang
+          - name: shellcheck
+            run: shellcheck {staged_files}
+            file_types: [text/x-shellscript, text/x-sh]
+
+          # Scan dependencies for vulnerabilities and IaC for misconfigurations
+          # Trivy scans the whole repository, so it runs once per commit instead of per file
+          # Secret scanning is left to gitleaks; the last arg is the path to scan
+          # Trivy ignores .gitignore, so skip installed dependencies explicitly
+          - name: trivy
+            run: trivy fs --exit-code 1 --scanners vuln,misconfig --severity HIGH,CRITICAL --skip-dirs "**/node_modules" --skip-dirs "**/.venv" --quiet .
+
+    # Fixers run one by one after the checks, since several of them fix the same files in place
+
+    # Lint Markdown, fixing what rumdl can in place
+    - name: rumdl
+      run: rumdl check --fix {staged_files}
+      glob: "*.md"
+
+    # Lint and format JavaScript and TypeScript files with Biome
+    - name: biome-check
+      run: biome check --write --files-ignore-unknown=true --no-errors-on-unmatched {staged_files}
+      glob: "*.{js,jsx,ts,tsx,cjs,cts,mjs,mts,json,jsonc,css,svelte,vue,astro,graphql,gql}"
+
+    # Lint Python files with Ruff
+    # --extend-select S adds the flake8-bandit security rules on top of the repository's Ruff config
+    - name: ruff-check
+      run: ruff check --force-exclude --fix --extend-select S {staged_files}
+      glob: "*.{py,pyi,ipynb}"
+
+    # Format Python files with Ruff
+    - name: ruff-format
+      run: ruff format --force-exclude {staged_files}
+      glob: "*.{py,pyi,ipynb,md}"
+
+commit-msg:
+  jobs:
+    # Check commit messages against Conventional Commits
+    # Merge and fixup!/squash!/amend! commits pass as-is
+    - name: cocogitto
+      run: cog verify --ignore-merge-commits --ignore-fixup-commits --file {1}

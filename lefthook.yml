@@ -1,0 +1,4 @@
+# lefthook config for this repository, which uses the shared config directly.
+# Other repositories load lefthook-shared.yml through remotes instead; see README.md.
+extends:
+  - lefthook-shared.yml

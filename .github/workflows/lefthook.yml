@@ -1,0 +1,73 @@
+# Reusable workflow that runs every lefthook pre-commit job against all files.
+# Other repositories call it with:
+#   uses: iwstkhr/shared-config/.github/workflows/lefthook.yml@main
+# See README.md for the full caller example.
+name: "repo - Lefthook"
+
+on:
+  workflow_call:
+    secrets:
+      SLACK_BOT_TOKEN:
+        description: Slack bot token for failure notifications. Notifications are skipped when omitted
+        required: false
+      SLACK_CHANNEL_ID:
+        description: ID of the Slack channel for failure notifications. Notifications are skipped when omitted
+        required: false
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  lefthook:
+    runs-on: ubuntu-slim
+    timeout-minutes: 15
+    outputs:
+      # Job-level if conditions cannot read secrets, so expose only whether Slack is configured
+      slack-enabled: ${{ secrets.SLACK_BOT_TOKEN != '' && secrets.SLACK_CHANNEL_ID != '' }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      # lefthook and every tool its jobs run come from the calling repository's mise.toml
+      - name: Setup mise
+        uses: jdx/mise-action@8418fedb1110381a0d3ba51a7a415d7c1b884550 # v5.2.2
+        with:
+          # Match minimumReleaseAge in the Renovate preset
+          minimum_release_age: 7d
+
+      # Restore Trivy's vulnerability DB and checks bundle, so trivy downloads them at most once a day
+      # Trivy itself still refreshes them when the restored copy is stale
+      - name: Get date
+        id: date
+        run: echo "today=$(date -u +%Y-%m-%d)" >> "$GITHUB_OUTPUT"
+
+      - name: Cache Trivy DB
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.cache/trivy
+          key: trivy-${{ runner.os }}-${{ steps.date.outputs.today }}
+          restore-keys: trivy-${{ runner.os }}-
+
+      # Install the Git hooks so lefthook fetches the remote configs, then run the pre-commit jobs on every file
+      # fail_on_changes in the shared config fails the run when a fixer changes a file, and prints the diff in CI
+      - name: Run lefthook
+        run: |
+          lefthook install
+          lefthook run pre-commit --all-files
+
+  notify:
+    name: Notify
+    needs: lefthook
+    if: ${{ failure() && needs.lefthook.outputs.slack-enabled == 'true' }}
+    # Reference this repository explicitly so the call resolves the same way from every caller
+    uses: iwstkhr/shared-config/.github/workflows/slack-notify.yml@main
+    with:
+      status: ${{ needs.lefthook.result }}
+    secrets:
+      SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+      SLACK_CHANNEL_ID: ${{ secrets.SLACK_CHANNEL_ID }}

@@ -1,0 +1,21 @@
+# Shared tool versions for all repositories: lefthook and the tools its hooks run.
+# Copy the tools each repository needs into its own mise.toml; see README.md.
+[tools]
+# Runtimes
+# semgrep and yamllint are installed into virtual environments that use this Python
+# semgrep fails on Python 3.15; stay on 3.14 until it supports 3.15 (see renovate-preset.json)
+python = "3.14.10"
+
+# Tools
+actionlint = "1.7.12"
+biome = "2.6.2"
+cocogitto = "7.0.0"
+editorconfig-checker = "4.0.2"
+gitleaks = "8.30.1"
+lefthook = "2.2.2"
+ruff = "0.17.2"
+rumdl = "0.3.2"
+semgrep = "1.182.1"
+shellcheck = "0.11.0"
+trivy = "0.76.1"
+yamllint = "1.38.0"
