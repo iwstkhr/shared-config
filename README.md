@@ -255,3 +255,56 @@ jobs:
 | `message` | No | Plain text shown under the title. Slack markup such as links and mentions is escaped |
 
 If the Slack API returns an error, such as `not_in_channel` or `invalid_auth`, the job fails and the error appears in the log.
+
+## Renovate
+
+[renovate-preset.json](renovate-preset.json) is a shared [Renovate](https://docs.renovatebot.com/) preset. Repositories apply the common dependency update rules by extending it in their Renovate config (e.g. `renovate.json`):
+
+```json
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["github>iwstkhr/shared-config:renovate-preset"]
+}
+```
+
+Renovate reads the preset from the default branch, so changes take effect in every repository once they are merged into `main`.
+
+### Extends
+
+| Preset | Purpose |
+| --- | --- |
+| `config:recommended` | Renovate's recommended settings |
+| `helpers:pinGitHubActionDigests` | Pin GitHub Actions to digests |
+| `customManagers:biomeVersions` | Detect Biome versions with a custom manager |
+| `customManagers:githubActionsVersions` | Update `_VERSION` environment variables marked with `# renovate:` comments in GitHub Actions workflows |
+
+### Common options
+
+- **labels**: Add the `dependencies` label to created PRs
+- **timezone**: `Asia/Tokyo`
+- **dependencyDashboard**: Enable the Dependency Dashboard issue
+- **minimumReleaseAge**: Wait 7 days after a release before updating
+- **rebaseWhen**: Rebase only when there are conflicts
+
+### Lock file maintenance
+
+Creates a lock file maintenance PR before 5:00 AM (Asia/Tokyo) every Monday and automerges it.
+
+### packageRules
+
+| Condition | Behavior |
+| --- | --- |
+| Major updates | Add the `breaking-change` label alongside `dependencies` and request review from `iwstkhr` when the PR is created (no automerge) |
+| Minor / patch updates | Group as `non-major dependencies` and automerge |
+| GitHub Actions pin / digest updates | Automerge |
+| Python version in `mise.toml` | Keep below 3.15 (`allowedVersions: "<3.15"`), because semgrep fails on Python 3.15. Remove the rule once semgrep supports 3.15 |
+
+### Validation
+
+[.github/workflows/renovate-validate.yml](.github/workflows/renovate-validate.yml) validates `renovate-preset.json` and `renovate.json` with the [Renovate config validator](https://docs.renovatebot.com/config-validation/) when either file changes. To run the same check locally:
+
+```bash
+npx --yes --package renovate -- renovate-config-validator --strict --no-global renovate-preset.json renovate.json
+```
+
+`--no-global` validates the files as repository config rather than self-hosted global config, and `--strict` also fails when an option needs migration. The validator does not fetch presets referenced in `extends`, so a wrong preset name only shows up on the Dependency Dashboard after Renovate runs.
