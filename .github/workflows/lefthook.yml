@@ -40,21 +40,10 @@ jobs:
           # Match minimumReleaseAge in the Renovate preset
           minimum_release_age: 7d
 
-      # Restore Trivy's vulnerability DB and checks bundle, so trivy downloads them at most once a day
-      # Trivy itself still refreshes them when the restored copy is stale
-      - name: Get date
-        id: date
-        run: echo "today=$(date -u +%Y-%m-%d)" >> "$GITHUB_OUTPUT"
-
-      - name: Cache Trivy DB
-        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-        with:
-          path: ~/.cache/trivy
-          key: trivy-${{ runner.os }}-${{ steps.date.outputs.today }}
-          restore-keys: trivy-${{ runner.os }}-
-
       # Install the Git hooks so lefthook fetches the remote configs, then run the pre-commit jobs on every file
       # fail_on_changes in the shared config fails the run when a fixer changes a file, and prints the diff in CI
+      # Trivy's DB is not cached: restoring a cache takes longer on this runner than downloading,
+      # and the download overlaps with semgrep in the parallel checks group
       - name: Run lefthook
         run: |
           lefthook install

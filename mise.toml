@@ -2,9 +2,11 @@
 # Copy the tools each repository needs into its own mise.toml; see README.md.
 [tools]
 # Runtimes
-# semgrep and yamllint are installed into virtual environments that use this Python
+# uv installs semgrep and yamllint into virtual environments that use this Python
 # semgrep fails on Python 3.15; stay on 3.14 until it supports 3.15 (see renovate-preset.json)
 python = "3.14.10"
+# Without uv, mise falls back to pipx, which is much slower and uses the system Python instead
+uv = "0.13.5"
 
 # Tools
 actionlint = "1.7.12"

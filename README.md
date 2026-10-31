@@ -68,6 +68,7 @@ Repositories need lefthook and the tools for the jobs that match their files ins
 [tools]
 # Runtimes
 python = "3.14.10"
+uv = "0.13.5"
 
 # Tools
 actionlint = "1.7.12"
@@ -84,7 +85,7 @@ trivy = "0.76.1"
 yamllint = "1.38.0"
 ```
 
-`cocogitto`, `editorconfig-checker`, `gitleaks`, `semgrep`, and `trivy` run on every commit, so every repository needs them. `semgrep` and `yamllint` are installed into Python virtual environments, so pin `python` too; the [CI workflow](#github-actions) does not set up Python separately. `actionlint`, `biome`, `ruff`, `rumdl`, `shellcheck`, and `yamllint` are needed only in repositories with workflows, JavaScript / TypeScript files, Python files, Markdown files, shell scripts, or YAML files. The [CI workflow](#github-actions) installs the tools in `mise.toml`, so the same versions run there. Renovate updates the versions in `mise.toml`.
+`cocogitto`, `editorconfig-checker`, `gitleaks`, `semgrep`, and `trivy` run on every commit, so every repository needs them. `semgrep` and `yamllint` are installed into Python virtual environments, so pin `python` and `uv` too; the [CI workflow](#github-actions) does not set up Python separately. Without `uv`, mise falls back to pipx, which takes over a minute to install semgrep on the CI runner and uses the system Python instead of the pinned one. `actionlint`, `biome`, `ruff`, `rumdl`, `shellcheck`, and `yamllint` are needed only in repositories with workflows, JavaScript / TypeScript files, Python files, Markdown files, shell scripts, or YAML files. The [CI workflow](#github-actions) installs the tools in `mise.toml`, so the same versions run there. Renovate updates the versions in `mise.toml`.
 
 `gitleaks` scans only the staged changes (`--staged`), so it finds nothing in `lefthook run pre-commit --all-files`, including the CI workflow. Run `gitleaks git` to scan the whole history.
 
@@ -127,7 +128,7 @@ Useful changes per repository:
 The `trivy` job runs `trivy fs` with the [Trivy](https://trivy.dev/) found on `PATH` and fails the commit on any HIGH or CRITICAL finding. GitHub-hosted runners do not have Trivy preinstalled, so repositories that call the [CI workflow](#github-actions) must pin it in `mise.toml`. Some details to keep in mind:
 
 - The job scans the whole repository rather than the staged files, so it runs once on every commit
-- The vulnerability database is downloaded on the first run and when it goes stale, so the job needs network access. It is cached in Trivy's default cache directory (`~/.cache/trivy`), outside the repository. The [CI workflow](#github-actions) caches that directory with `actions/cache`, keyed by date, so it downloads the database at most once a day
+- The vulnerability database is downloaded on the first run and when it goes stale, so the job needs network access. It is cached in Trivy's default cache directory (`~/.cache/trivy`), outside the repository. The [CI workflow](#github-actions) downloads it on every run instead of restoring it with `actions/cache`: restoring takes longer than downloading on the runner, and the download overlaps with semgrep in the parallel `checks` group
 - `--exit-code 1` makes findings fail the commit, since `trivy fs` exits with 0 by default
 - `--scanners vuln,misconfig` skips Trivy's secret scanner, since gitleaks already covers secrets
 - Trivy does not read `.gitignore`, so `--skip-dirs "**/node_modules"` and `--skip-dirs "**/.venv"` keep it out of installed dependencies at any depth. Lockfiles and `requirements.txt` are still scanned
